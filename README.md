@@ -1,4 +1,4 @@
-# medusa
+# medusa(美杜莎)
 
 > (M)ircrofront(E)n(D) (U)niversal(S)inglepage(A)pplication.
 
