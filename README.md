@@ -4,7 +4,7 @@
 
 English｜[简体中文](./README_zh.md)｜
 
-Medusa is a micro front-end framework based on various frameworks. It has extremely high framework compatibility and can run on several mainstream micro front-end frameworks. It enables `Qiankun`, `Icestark`, `@micro-zoe/micro-app` and `next.js` to run in one environment at the same time. And all use the `proxy` as sandbox solution, ignore the compatibility problem of old browsers, and completely isolate the main application and the micro application.
+Medusa is a micro front-end framework based on various frameworks. It has extremely high framework compatibility and can run on several popular micro front-end frameworks. It enables `Qiankun`, `Icestark`, `@micro-zoe/micro-app` and `next.js` to run in one environment at the same time. And we use the `proxy` as the sandbox solution, ignore the compatibility problem of old browsers, and completely isolate the main application and the micro application.
 
 # Feature
 

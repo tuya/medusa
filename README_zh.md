@@ -2,7 +2,7 @@
 
 > (M)ircrofront(E)n(D) (U)niversal(S)inglepage(A)pplication. 
 
-[English](https://github.com/tuya/medusa/README.md)｜简体中文｜
+[English](https://github.com/tuya/medusa)｜简体中文｜
 
 medusa是一款基于各种框架之上的微前端框架，具有极高的框架兼容性，能够运行在目前主流的几种微前端框架之上。使得`乾坤`、`飞冰`、`京东微前端`以及`next.js`能够同时运行在一个环境下。并全部采用`proxy`的沙箱方案，摒弃老旧浏览器的兼容性问题，完全隔离主应用与微应用。
 
