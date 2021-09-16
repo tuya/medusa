@@ -1,0 +1,45 @@
+{
+  "name": "medusa.js",
+  "version": "0.0.1",
+  "description": "Micro Frontends All-in-one Integrated Solution.",
+  "main": "index.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "build:website": "cd website && yarn && yarn docs:build && cd ..",
+    "push": "lerna --no-git-tag-version publish --force-publish",
+    "push:beta": "lerna --no-git-tag-version publish --force-publish --dist-tag experimental",
+    "demo": "yarn && yarn examples:install && yarn examples:start",
+    "examples:install": "npm-run-all --serial install:*",
+    "examples:start": "npm-run-all --parallel start:*",
+    "install:main": "cd examples/main && yarn",
+    "install:child-create-react-app": "cd examples/child-create-react-app && yarn",
+    "install:child-next": "cd examples/child-next && yarn",
+    "install:child-qiankun": "cd examples/child-qiankun && yarn",
+    "start:main": "cd examples/main && yarn start",
+    "start:child-create-react-app": "cd examples/child-create-react-app && yarn start",
+    "start:child-next": "cd examples/child-next && yarn dev",
+    "start:child-qiankun": "cd examples/child-qiankun && yarn start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tuya/medusa.git"
+  },
+  "keywords": [
+    "medusa",
+    "microfrontends",
+    "icestark",
+    "qiankun"
+  ],
+  "author": "djwxfdt",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tuya/medusa/issues"
+  },
+  "homepage": "https://github.com/tuya/medusa#readme",
+  "devDependencies": {
+    "lerna": "^4.0.0",
+    "npm-run-all": "^4.1.5"
+  }
+}

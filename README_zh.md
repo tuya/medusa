@@ -32,14 +32,14 @@ medusa是一款基于各种框架之上的微前端框架，具有极高的框�
 1. 安装依赖
 
 ```shell
-$ yarn add @tuya-fe/medusa 
+$ yarn add medusa.js 
 ```
 
 2. 主应用引入路由
 
 ```tsx
 
-import {Router, Route} from '@tuya-fe/medusa'
+import {Router, Route} from 'medusa.js'
 
 const App = () => {
   return <Router loading={<div>loading...</div>}>
