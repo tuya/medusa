@@ -55,7 +55,7 @@ export const useStarApp = (options: {
       assetPublicPath,
       execScripts,
       getExternalStyleSheets,
-    } = await parseAssets({...assetsOptions, next: props.next || props.html, html: undefined}, props.layer);
+    } = await parseAssets({...assetsOptions, next: props.html, html: undefined}, props.layer);
 
     if (!refSandbox.current) {
       refSandbox.current = new Sandbox({

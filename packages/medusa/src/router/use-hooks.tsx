@@ -27,11 +27,11 @@ export const useHistoryEvents = (options: {
     const originalRemoveEventListener = topWindow.removeEventListener;
     topWindow.history.pushState = (...args) => {
       originalPush.apply(topWindow.history, args);
-      onStateChange(args[0], args[2], 'pushState');
+      onStateChange(args[0], args[2] as any, 'pushState');
     };
     topWindow.history.replaceState = (...args) => {
       originalReplace.apply(topWindow.history, args);
-      onStateChange(args[0], args[2], 'replaceState');
+      onStateChange(args[0], args[2] as any, 'replaceState');
     };
 
     topWindow.addEventListener = (eventName:string, handler: any, ...args:Array<any>) => {

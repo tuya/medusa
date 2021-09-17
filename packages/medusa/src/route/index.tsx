@@ -79,7 +79,7 @@ const Route:React.FC<IRouteProps> = (props) => {
     return <PluginPeerRoute {...props}>{props.children}</PluginPeerRoute>;
   }
 
-  if (props.next || props.framework === 'next' || props.framework === 'ty-next') {
+  if (props.framework === 'next' || props.framework === 'ty-next') {
     return <PluginNextRoute {...props} />;
   }
 
