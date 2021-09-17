@@ -35,7 +35,7 @@
     "eventemitter3": "^4.0.7",
     "global": "^4.4.0",
     "htmlparser2": "^7.1.0",
-    "med-error-overlay": "0.0.2-alpha.0",
+    "mmed-error-overlay": "0.0.2-alpha.0",
     "path-to-regexp": "^6.1.0",
     "query-string": "^6.13.4",
     "rxjs": "^6.6.3",
