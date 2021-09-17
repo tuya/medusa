@@ -27,7 +27,7 @@ function App() {
           <Route framework="zoe" />
           <Route html="http://localhost:8001{0}" path="/child1(.*)" rootId="root" autoUnmount />
           <Route html="http://localhost:8002{0}" path="/child2(.*)" framework="qiankun" />
-          <Route next="http://localhost:8003{0}" path="/child3(.*)" framework="next" autoUnmount />
+          <Route html="http://localhost:8003{0}" path="/child3(.*)" framework="next" autoUnmount />
           <Route assets={{
             js: ['https://iceworks.oss-cn-hangzhou.aliyuncs.com/icestark/child-seller-react/build/js/index.js'],
             css: ['https://iceworks.oss-cn-hangzhou.aliyuncs.com/icestark/child-seller-react/build/css/index.css']
