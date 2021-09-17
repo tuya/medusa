@@ -1,10 +1,10 @@
 # medusa(美杜莎)
 
-> (M)ircrofront(E)n(D) (U)niversal(S)inglepage(A)pplication.
+> (M)ircrofront(E)n(D) (U)niversal(S)inglepage(A)pplication. [Website Chinese docs](https://medusa.tuyacn.com)
 
 English｜[简体中文](./README_zh.md)｜
 
-Medusa is a micro front-end framework based on various frameworks. It has extremely high framework compatibility and can run on several popular micro front-end frameworks. It enables `Qiankun`, `Icestark`, `@micro-zoe/micro-app` and `next.js` to run in one environment at the same time. And we use the `proxy` as the sandbox solution, ignore the compatibility problem of old browsers, and completely isolate the main application and the micro application.
+Medusa is a micro front-end framework based on various frameworks. It has extremely high framework compatibility and can run on several popular micro front-end frameworks. It enables [Qiankun](https://github.com/umijs/qiankun), [Icestark](https://github.com/ice-lab/icestark), [@micro-zoe/micro-app](https://github.com/micro-zoe/micro-app) and [next.js](https://github.com/vercel/next.js) to run in one environment at the same time. And we use the `proxy` as the sandbox solution, ignore the compatibility problem of old browsers, and completely isolate the main application and the micro application.
 
 # Feature
 
