@@ -1,6 +1,6 @@
 {
   "name": "medusa-error-overlay",
-  "version": "0.3.11",
+  "version": "1.0.0",
   "description": "An overlay for displaying stack frames.",
   "main": "lib/index.js",
   "sideEffects": false,
