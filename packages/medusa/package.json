@@ -10,7 +10,7 @@
   },
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
-  "version": "0.0.2-alpha.0",
+  "version": "0.0.2",
   "author": "djwxfdt",
   "devDependencies": {
     "@types/jest": "^26.0.20",
@@ -35,7 +35,7 @@
     "eventemitter3": "^4.0.7",
     "global": "^4.4.0",
     "htmlparser2": "^7.1.0",
-    "medusa-error-overlay": "^1.0.1",
+    "med-error-overlay": "0.0.2-alpha.0",
     "path-to-regexp": "^6.1.0",
     "query-string": "^6.13.4",
     "rxjs": "^6.6.3",
@@ -53,5 +53,5 @@
     "hack.d.ts"
   ],
   "license": "MIT",
-  "gitHead": "2150e2f2bc8183f242718022cd7824a8624ffa8a"
+  "gitHead": "f344abc2efa85ca22867371cb48d827f35f410b3"
 }
