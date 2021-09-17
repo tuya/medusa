@@ -1,60 +1,59 @@
-# medusa(美杜莎)
+## Medusa
 
-> (M)ircrofront(E)n(D) (U)niversal(S)inglepage(A)pplication. [Website Chinese docs](https://medusa.tuyacn.com)
+> (M)ircrofront(E)n(D) (U)niversal (S)inglepage (A)pplication. [Chinese Docs](https://medusa.tuyacn.com)
 
-English｜[简体中文](./README_zh.md)｜
+English | [简体中文](./README_zh.md)
 
-Medusa is a micro front-end framework based on various frameworks. It has extremely high framework compatibility and can run on several popular micro front-end frameworks. It enables [Qiankun](https://github.com/umijs/qiankun), [Icestark](https://github.com/ice-lab/icestark), [@micro-zoe/micro-app](https://github.com/micro-zoe/micro-app) and [next.js](https://github.com/vercel/next.js) to run in one environment at the same time. And we use the `proxy` as the sandbox solution, ignore the compatibility problem of old browsers, and completely isolate the main application and the micro application.
+Medusa is a micro frontend framework based on various frameworks. With extremely high framework compatibility, Medusa can run on several popular micro front-end frameworks. It enables [Qiankun](https://github.com/umijs/qiankun), [Icestark](https://github.com/ice-lab/icestark), [micro-zoe/micro-app](https://github.com/micro-zoe/micro-app), and [Next.js](https://github.com/vercel/next.js) to run in one environment simultaneously. The `proxy` sandbox solution is used to solve compatibility problems of old browsers. The main application and the micro-application are completed isolated.
 
-# Feature
+## Features
 
-1. Unrestricted front-end framework.
+- Unrestricted frontend framework.
 
-2. Compatible with Qiankun, Icestark, Jingdong and other micro front-end frameworks, and can be loaded directly without any changes.
+- Compatible with Qiankun, Icestark, micro-zoe/micro-app, and other micro frontend frameworks. It can be loaded directly without any changes.
 
-3. Support the direct use of SSR mode.
+- Directly use the server-side rendering mode.
 
-4. Support loading the popular SSR framework next.js.
+- Load the popular server-side rendering framework Next.js.
 
-5. Can be used as an independent micro front-end framework
+- Be used as an independent micro frontend framework.
 
-6. Take the life cycle of React components as the life cycle of micro-applications
+- Take the life cycle of React components as the life cycle of micro-applications.
 
-# Getting Start
 
-For more usage, please see [Examples](./examples)
+## Get started
 
-## Base Application
+For more information, see [Examples](./examples).
 
-> The Base Application muse be React
+### Main application
 
-1. Install
+The main application is React.
 
-```shell
-$ yarn add mmed 
-```
+1. Install dependency
 
-2. import at the router
+    ```shell
+    $ yarn add mmed
+    ```
 
-```tsx
+2. Import the main application
 
-import {Router, Route} from 'mmed'
+    ```tsx
 
-const App = () => {
-  return <Router loading={<div>loading...</div>}>
-    <Route html="http://localhost:7100" appId="reactApp" />
-  </Router>
-}
+    import {Router, Route} from 'mmed'
 
-ReactDOM.render(<App />, document.getElementById('app'))
+    const App = () => {
+      return <Router loading={<div>loading...</div>}>
+        <Route html="http://localhost:7100" appId="reactApp" />
+      </Router>
+    }
 
-```
+    ReactDOM.render(<App />, document.getElementById('app'))
 
-## Micro Application
+    ```
 
-> We take the dev mode as an example.
+### Micro-applications
 
-1. Just set cross-domain for webpack-dev-server
+Take the development mode as an example. Set the cross-origin parameter of the page.
 
 ```js
 devServer: {
@@ -65,9 +64,9 @@ devServer: {
 
 ```
 
-# Examples
+## Example
 
-Inside the examples folder, there is a Base Application with three Micro FE apps. It also shows how to load the micro front-end in 8 different ways. 
+In the `examples` directory, there are examples of the main application and three sub-applications. It also shows how to load the micro frontend in 8 ways in the main application.
 
 
 ```shell
@@ -83,5 +82,5 @@ yarn demo
 
 ![](./examples/demo.gif)
 
-# License
-[MIT](./LICENSE)
+## License
+For more information about licenses, see [MIT](./LICENSE).
