@@ -18,11 +18,11 @@ footer: Open-source MIT Licensed | Copyright © 2021<br />Powered by [Tuya.inc](
 ## 快速接入!
 
 ```shell
-  $ yarn add medusa.js
+  $ yarn add mmed
 ```
 
 ```js
-import {Router, Route} from 'medusa.js'
+import {Router, Route} from 'mmed'
 
 const App = () => {
   return <Router loading={<div>loading...</div>}>

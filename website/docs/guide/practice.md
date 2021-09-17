@@ -11,7 +11,7 @@ order: 3
 
 ```js
 
-import {Router, Route} from 'medusa.js'
+import {Router, Route} from 'mmed'
 
 function Container() {
   return <Router loading={<div>loading...</div>}>
@@ -27,7 +27,7 @@ function Container() {
 
 ```js
 
-import {Router, Route} from 'medusa.js'
+import {Router, Route} from 'mmed'
 
 function Container() {
   return <Router loading={<div>loading...</div>}>
@@ -58,7 +58,7 @@ function Container() {
 
 ```js
 
-import {Router, Route} from 'medusa.js'
+import {Router, Route} from 'mmed'
 
 function Container() {
   return <Router loading={<div>loading...</div>}>
@@ -88,7 +88,7 @@ module.exports = {
 
 ```js
 
-import {Router, Route} from 'medusa.js'
+import {Router, Route} from 'mmed'
 
 function Container() {
   return <Router loading={<div>loading...</div>}>
@@ -110,7 +110,7 @@ function Container() {
 
 ```js
 
-import {Router, Route} from 'medusa.js'
+import {Router, Route} from 'mmed'
 
 function Container() {
   return <Router loading={<div>loading...</div>}>
@@ -135,7 +135,7 @@ function Container() {
 
 ```js
 
-import {Router, Route} from 'medusa.js'
+import {Router, Route} from 'mmed'
 
 function Container() {
   return <Router loading={<div>loading...</div>}>

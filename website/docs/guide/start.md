@@ -10,12 +10,12 @@ order: 2
 ### 1. 安装 美杜莎
 
 ```bash
-$ yarn add medusa.js
+$ yarn add mmed
 ```
 ### 2. 主应用接入
 
 ```js
-import {Router, Route} from 'medusa.js'
+import {Router, Route} from 'mmed'
 
 function Container() {
   return <Router loading={<div>loading...</div>}>

@@ -1,6 +1,6 @@
 import logo from './logo.svg';
 import './App.css';
-import {Router, Route, appHistory} from 'medusa.js'
+import {Router, Route, appHistory} from 'mmed'
 
 function App() {
   console.log('redner....')

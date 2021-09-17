@@ -31,14 +31,14 @@ For more usage, please see [Examples](./examples)
 1. Install
 
 ```shell
-$ yarn add medusa.js 
+$ yarn add mmed 
 ```
 
 2. import at the router
 
 ```tsx
 
-import {Router, Route} from 'medusa.js'
+import {Router, Route} from 'mmed'
 
 const App = () => {
   return <Router loading={<div>loading...</div>}>

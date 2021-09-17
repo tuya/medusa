@@ -1,5 +1,5 @@
 {
-  "name": "medusa.js",
+  "name": "mmed",
   "description": "Micro Frontends All-in-one Integrated Solution.",
   "scripts": {
     "build": "rm -rf lib && tsc",
@@ -10,7 +10,7 @@
   },
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
-  "version": "0.0.3-alpha.0",
+  "version": "0.0.1",
   "author": "djwxfdt",
   "devDependencies": {
     "@types/jest": "^26.0.20",
@@ -53,5 +53,5 @@
     "hack.d.ts"
   ],
   "license": "MIT",
-  "gitHead": "e3d4cf1e3ce93d4e778911eb43d19485b1070671"
+  "gitHead": "2150e2f2bc8183f242718022cd7824a8624ffa8a"
 }

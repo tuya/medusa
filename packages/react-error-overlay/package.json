@@ -1,6 +1,6 @@
 {
-  "name": "medusa-error-overlay",
-  "version": "1.0.1",
+  "name": "mmed-error-overlay",
+  "version": "0.0.1",
   "description": "An overlay for displaying stack frames.",
   "main": "lib/index.js",
   "sideEffects": false,
@@ -89,5 +89,5 @@
       "setupJest.js"
     ]
   },
-  "gitHead": "e3d4cf1e3ce93d4e778911eb43d19485b1070671"
+  "gitHead": "2150e2f2bc8183f242718022cd7824a8624ffa8a"
 }
