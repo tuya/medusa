@@ -38,7 +38,7 @@ export const parseBaseName = (path?: string, passName?: string, params?: Record<
 
 
 export const fixAppName = (appname?: string) => {
-  return appname?.replace(/-/, '_');
+  return appname?.replace(/-/g, '_');
 };
 
 export const isPrefixUrl = (prefix?: string, url?: string) => {
