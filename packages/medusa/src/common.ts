@@ -2,11 +2,12 @@ const findTopWindow = () => {
   if (typeof window === 'undefined') {
     return {};
   }
-  let win:any = window;
-  while (win.__tyParentWindow) {
-    win = win.__tyParentWindow;
-  }
-  return win;
+  return new Function('return window')();
+  // let win:any = window;
+  // while (win.__tyParentWindow) {
+  //   win = win.__tyParentWindow;
+  // }
+  // return win;
 };
 
 export interface IMyWindow extends Window {

@@ -1,0 +1,39 @@
+{
+    "env": {
+        "browser": true,
+        "es2021": true
+    },
+    "extends": [
+        "plugin:react/recommended",
+        "google"
+    ],
+    "settings": {
+        "react": {
+            "version": "detect"
+        }
+    },
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+        "ecmaFeatures": {
+            "jsx": true
+        },
+        "ecmaVersion": 12,
+        "sourceType": "module"
+    },
+    "plugins": [
+        "react",
+        "@typescript-eslint",
+        "react-hooks"
+    ],
+    "rules": {
+        "max-len": "off",
+        "no-unused-vars": "off",
+        "react/prop-types": "off",
+        "guard-for-in": "off",
+        "valid-jsdoc": "off",
+        "require-jsdoc": "off",
+        "comma-dangle": "off",
+        "react-hooks/rules-of-hooks": "error",
+        "react-hooks/exhaustive-deps": "warn"
+    }
+}
