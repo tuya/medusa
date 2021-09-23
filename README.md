@@ -1,6 +1,6 @@
 ## Medusa
 
-> (M)ircrofront(E)n(D) (U)niversal (S)inglepage (A)pplication. [Chinese Docs](https://medusa.tuyacn.com)
+> (M)ircrofront(E)n(D) (U)niversal (S)inglepage (A)pplication. [Chinese Docs](https://tuya.github.io/medusa/)
 
 English | [简体中文](./README_zh.md)
 

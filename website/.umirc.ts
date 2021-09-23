@@ -4,7 +4,8 @@ export default defineConfig({
   title: 'medusa',
   favicon: 'https://images.tuyacn.com/rms-static/ef5d51b0-03bf-11ec-8caa-bf190bbd93b6-1629688343115.jpg',
   logo: 'https://images.tuyacn.com/rms-static/ef5d51b0-03bf-11ec-8caa-bf190bbd93b6-1629688343115.jpg',
-  outputPath: '../docs',
+  outputPath: 'docs-dist',
+  publicPath: '/medusa/',
   mode: 'site',
   resolve: {
     includes: ['docs'],
@@ -16,5 +17,6 @@ export default defineConfig({
   history: {
     type: 'hash'
   },
+  base: '/medusa/'
   // more config: https://d.umijs.org/config
 });
