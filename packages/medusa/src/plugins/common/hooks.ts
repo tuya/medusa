@@ -144,7 +144,8 @@ export const useStarApp = (options: {
     const {idList, jsSourceList} = await appendAssets({
       cssList,
       styleList: cssContents,
-      jsList
+      jsList,
+      container: props.scopeCss ? ele : undefined
     });
 
     refIdList.current = idList;

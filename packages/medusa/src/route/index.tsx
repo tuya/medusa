@@ -72,6 +72,11 @@ export type IRouteProps = {
    * 默认3
    */
   tyNextVersion?: 1 | 3
+
+  /**
+   * 是否将style插入到容器里
+   */
+  scopeCss?: boolean
 }
 
 const Route:React.FC<IRouteProps> = (props) => {

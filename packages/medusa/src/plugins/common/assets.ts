@@ -34,6 +34,15 @@ const appendInlineStyle = async (content:string, id:string) => {
   root.appendChild(element);
 };
 
+const appendScopeStyle = async (content:string, container:HTMLElement) => {
+  const element = document.createElement('style');
+  element.innerHTML = content;
+  const parent = container.parentNode;
+  if (parent) {
+    parent.insertBefore(element, container);
+  }
+};
+
 /**
  * js文件缓存
  */
@@ -43,6 +52,7 @@ export const appendAssets = async (props: {
   jsList?: string[]
   cssList?: string[]
   styleList?: string[]
+  container?: HTMLElement
 }) => {
   const idList: string[] = [];
 
@@ -59,9 +69,13 @@ export const appendAssets = async (props: {
   }
 
   styleList?.forEach((str)=>{
-    const id = `TUYA_INLINE_STYLE_${Math.random().toString(16).substr(2)}`;
-    idList.push(id);
-    appendInlineStyle(str, id);
+    if (props.container?.parentNode) {
+      appendScopeStyle(str, props.container);
+    } else {
+      const id = `TUYA_INLINE_STYLE_${Math.random().toString(16).substr(2)}`;
+      idList.push(id);
+      appendInlineStyle(str, id);
+    }
   });
 
   if (jsList?.length) {
