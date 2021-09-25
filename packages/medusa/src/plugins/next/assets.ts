@@ -34,12 +34,13 @@ export const execNextScripts = async (sandbox: Sandbox, scripts: AssetItem[], js
   });
 
   try {
+    const sandBoxWin = sandbox.getSandbox();
     let execScript = `with (window) {;${list.join(';\n')}\n}`;
     const blob = new Blob([execScript], {type: 'application/javascript'});
     const url = URL.createObjectURL(blob);
     execScript = `${execScript}\n//# sourceURL=${url}\n`;
-    const code = new Function('window', execScript).bind(sandbox);
-    code(sandbox.getSandbox());
+    const code = new Function('window', execScript).bind(sandBoxWin);
+    code(sandBoxWin);
   } catch (error) {
     console.error(`error occurs when execute script in sandbox: ${error}`);
     throw error;

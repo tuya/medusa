@@ -96,7 +96,7 @@ export const parseAssets = async (options:{
   if (options.next) {
     return {
       execScripts: async (sandbox: Sandbox) => {
-        execNextScripts(sandbox, scripts, scriptJson);
+        return await execNextScripts(sandbox, scripts, scriptJson);
       },
       template,
       assetPublicPath,
