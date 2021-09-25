@@ -1,4 +1,5 @@
-import {AssetItem} from '../../html-parse/utils';
+import {genRandomAppId} from '.';
+import {AssetItem, resetScope} from '../../html-parse/utils';
 import Sandbox from '../../sandbox';
 import Log from '../../utils/log';
 import {getGlobalProp, noteGlobalProps} from '../../utils/umd';
@@ -37,8 +38,15 @@ const appendInlineStyle = async (content:string, id:string) => {
 const appendScopeStyle = async (content:string, container:HTMLElement) => {
   const element = document.createElement('style');
   element.innerHTML = content;
-  const parent = container.parentNode;
+  const parent = container.parentNode as HTMLDivElement;
   if (parent) {
+    const id = parent.id;
+    if (!id) {
+      const randomId = genRandomAppId();
+      parent.id = randomId;
+    }
+    const str = resetScope(`#${parent.id}`, content);
+    element.innerHTML = str;
     parent.insertBefore(element, container);
   }
 };

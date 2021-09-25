@@ -92,3 +92,25 @@ export const getStyleContents = (list: AssetItem[]) => {
     });
   }));
 };
+
+
+export const resetScope = (prefix: string, styleStr: string) => {
+  const parser = new DOMParser();
+
+  const body = parser.parseFromString(`<style>${styleStr}</style>`, 'text/html');
+
+  const style = body.querySelector('style');
+
+  if (!style?.sheet) {
+    return styleStr;
+  }
+
+  let str = '';
+  for (let i = 0; i< (style.sheet.cssRules.length || 0); i ++) {
+    const rule = style.sheet.cssRules[i];
+    str += `${prefix} ${rule.cssText}` + '\n';
+  }
+
+  return str;
+};
+
