@@ -10,7 +10,7 @@
   },
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "author": "djwxfdt",
   "devDependencies": {
     "@types/jest": "^26.0.20",
