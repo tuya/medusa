@@ -91,6 +91,7 @@ export default class Sandbox {
           options.basename,
           options.nextVersion
       ));
+      this._isNext = true;
     } else if (options?.framework === 'icestark' || options?.framework === 'qiankun') {
       this._pluginSystem.plugins.push(new IceStarkPlugin(
           options.framework,
@@ -238,9 +239,9 @@ export default class Sandbox {
     });
 
     Reflect.set(proxyWindow, 'self', sandbox);
-    this.listen();
     window._currentSandbox = sandbox;
     this.sandbox = sandbox;
+    this.listen();
   }
 
   getSandbox() {

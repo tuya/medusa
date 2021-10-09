@@ -48,7 +48,8 @@ export const listenRoutes = (path?: string, basename?: string, isNext?: boolean,
   if (path) {
     const regPath = new Layer(path);
     return router.listen((method, url, as) => {
-      if (!regPath.match(as)) {
+      regPath.match(as);
+      if (!regPath.isMatched) {
         return;
       }
       if (isNext && sandbox?.next && sandbox?.next.router) {
