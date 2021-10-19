@@ -11,7 +11,7 @@ import IceStarkPlugin from './plugins/icestark';
 import ZoePlugin from './plugins/zoe';
 import {listenNativeEvents, listenRoutes} from './listener';
 import {ILifecycle, validateExportLifecycle} from '../plugins/ali/qiankun';
-import {TY_SUB_APP_ID, TY_SUB_BASE_NAME, TY_SUB_MOUNT_CALLBACK, TY_SUB_PUBLIC_PATH, TY_SUB_UNMOUNT_CALLBACK} from '../common';
+import {topWindow, TY_SUB_APP_ID, TY_SUB_BASE_NAME, TY_SUB_MOUNT_CALLBACK, TY_SUB_PUBLIC_PATH, TY_SUB_UNMOUNT_CALLBACK} from '../common';
 declare global {
   interface Window {
     __tyParentWindow?: any
@@ -235,6 +235,9 @@ export default class Sandbox {
           // case of window.clientWidth、new window.Object()
           return value;
         }
+      },
+      has: (target: any, key: PropertyKey): boolean => {
+        return key in target || key in topWindow;
       },
     });
 
