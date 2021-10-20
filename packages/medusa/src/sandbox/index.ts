@@ -204,6 +204,9 @@ export default class Sandbox {
         if (p === '__tyParentWindow') {
           return originalWindow[p] || originalWindow;
         }
+        if (p === 'eval') {
+          return eval;
+        }
         if (_globals.includes(p as string) || TY_GLOBAL_VALUES.includes(p as string)) {
           return originalWindow[p];
         }
