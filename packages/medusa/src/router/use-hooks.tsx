@@ -158,7 +158,7 @@ export const usePickChildren = (props: {
  * 当路由事件没人消费，就交由最外层的基座处理
  */
 export const useRouterListen = () => {
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (typeof window === 'undefined' || window !== topWindow) {
       return;
     }

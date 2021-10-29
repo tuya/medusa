@@ -46,6 +46,10 @@ export const headProxy = (head: HTMLHeadElement, sandbox?: Window, injection?: (
         return value.bind(head);
       }
       return value;
+    },
+    set(target, p, v) {
+      target[p] = v;
+      return true;
     }
   });
 };
