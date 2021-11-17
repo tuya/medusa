@@ -70,7 +70,7 @@ In the `examples` directory, there are examples of the main application and thre
 
 
 ```shell
-git clone https://github.com/medusa.git
+git clone https://github.com/tuya/medusa.git
 cd medusa
 ```
 
