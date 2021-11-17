@@ -72,7 +72,7 @@ devServer: {
 
 
 ```shell
-git clone https://github.com/medusa.git
+git clone https://github.com/tuya/medusa.git
 cd medusa
 ```
 
