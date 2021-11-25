@@ -1,9 +1,11 @@
-import {genRandomAppId} from '.';
 import {AssetItem, resetScope} from '../../html-parse/utils';
 import Sandbox from '../../sandbox';
 import Log from '../../utils/log';
 import {getGlobalProp, noteGlobalProps} from '../../utils/umd';
 
+const getRandomId = () => {
+  return `med_${Math.random().toString(16).slice(2, 8)}`;
+};
 
 const appendCss = async (url:string, id:string) => {
   const root = document.getElementsByTagName('head')[0];
@@ -42,7 +44,7 @@ const appendScopeStyle = async (content:string, container:HTMLElement) => {
   if (parent) {
     const id = parent.id;
     if (!id) {
-      const randomId = genRandomAppId();
+      const randomId = getRandomId();
       parent.id = randomId;
     }
     const str = resetScope(`#${parent.id}`, content);
