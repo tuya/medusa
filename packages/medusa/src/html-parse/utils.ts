@@ -108,7 +108,18 @@ export const resetScope = (prefix: string, styleStr: string) => {
   let str = '';
   for (let i = 0; i< (style.sheet.cssRules.length || 0); i ++) {
     const rule = style.sheet.cssRules[i];
-    str += `${prefix} ${rule.cssText}` + '\n';
+    if (rule.cssText.startsWith('@')) {
+      str += `${rule.cssText}` + '\n';
+    } else {
+      const selectorText = (rule as any).selectorText as string;
+      if (selectorText && rule.cssText.startsWith(selectorText) && selectorText.includes(',')) {
+        const bodyStr = rule.cssText.replace(selectorText, '');
+        const prefixStr = selectorText.split(',').map((t) => `${prefix} ${t}`).join(',');
+        str += `${prefixStr} ${bodyStr}` + '\n';
+      } else {
+        str += `${prefix} ${rule.cssText}` + '\n';
+      }
+    }
   }
 
   return str;
