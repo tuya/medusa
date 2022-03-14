@@ -80,7 +80,7 @@ yarn demo
 
 ```
 
-![](./examples/demo.gif)
+![](./examples/demo-en.gif)
 
 ## License
 For more information about licenses, see [MIT](./LICENSE).
