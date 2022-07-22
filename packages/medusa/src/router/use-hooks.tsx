@@ -8,17 +8,66 @@ import browserRouter from '../packages/browser-history';
 
 import {appHistory} from '../link';
 import Sandbox from '../sandbox';
+import usePersistFn from '../hooks/use-persist-fn';
+import {prefetch} from '../plugins/common/prefetch';
+import Log from '../utils/log';
 
-export const useHistoryEvents = (options: {
-  onStateChange: (evt: PopStateEvent, url?: string|null, routeType?: 'pushState' | 'replaceState') => void
-  onUrlChange: (url: {pathname:string, query: string, hash:string}) => void
-}) => {
-  const {onUrlChange, onStateChange} = options;
+/**
+ * 为了兼容qiankun
+ */
+function createPopStateEvent(state) {
+  // https://github.com/single-spa/single-spa/issues/224 and https://github.com/single-spa/single-spa-angular/issues/49
+  // We need a popstate event even though the browser doesn't do one by default when you call replaceState, so that
+  // all the applications can reroute. We explicitly identify this extraneous event by setting singleSpa=true and
+  // singleSpaTrigger=<pushState|replaceState> on the event instance.
+  let evt;
+  try {
+    evt = new PopStateEvent('popstate', {state});
+  } catch (err) {
+    // IE 11 compatibility https://github.com/single-spa/single-spa/issues/299
+    // https://docs.microsoft.com/en-us/openspecs/ie_standards/ms-html5e/bd560f47-b349-4d2c-baa8-f1560fb489dd
+    evt = document.createEvent('PopStateEvent');
+    evt.initPopStateEvent('popstate', false, false, state);
+  }
+  evt.medusa = true;
+  return evt;
+}
+
+export const useHistoryEvents = ({autoPopState}: {autoPopState?: boolean}) => {
+  const [urlOption, setUrlOption] = useState<{
+    pathname: string
+    query?: string
+    hash: string
+  } | null>(() => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    return parseUrl(location.href);
+  });
 
   const refEventsPool = useRef<{[key:string]:Array<any>}>({
     hashchange: [],
     popstate: [],
   });
+
+  const onStateChange = usePersistFn((evt: PopStateEvent, url?: string|null, routeType?: 'pushState' | 'replaceState')=>{
+    if (!url) {
+      Log.warn('received empty url, ignore!');
+      return;
+    }
+    const op = parseUrl(url);
+
+    setUrlOption((prev) => {
+      if (autoPopState && (prev?.pathname !== op.pathname || prev?.hash !== op.hash)) {
+        Log.info('auto popstate');
+        window.dispatchEvent(
+            createPopStateEvent(window.history.state)
+        );
+      }
+      return op;
+    });
+  });
+
 
   useEffect(()=>{
     const originalPush = topWindow.history?.pushState;
@@ -49,7 +98,11 @@ export const useHistoryEvents = (options: {
     };
 
     const onPopState = (e: PopStateEvent) => {
-      onUrlChange(parseUrl(location.href));
+      if ((e as any).medusa) {
+        return;
+      }
+      const op = parseUrl(location.href);
+      setUrlOption(op);
     };
 
     topWindow.addEventListener('popstate', onPopState, false);
@@ -61,13 +114,18 @@ export const useHistoryEvents = (options: {
       topWindow.removeEventListener = originalRemoveEventListener;
       topWindow.removeEventListener('popstate', onPopState, false);
     };
-  }, [onUrlChange, onStateChange]);
+  }, [onStateChange]);
 
-  return refEventsPool;
+  useEventsCall(refEventsPool);
+
+  return {
+    urlOption,
+    setUrlOption
+  };
 };
 
 
-export const useEventsCall = (refEventsPool: React.MutableRefObject<Record<string, any[]>>)=> useCallback((eventArgs?: {type:string} | Array<{type:string}>)=>{
+const useEventsCall = (refEventsPool: React.MutableRefObject<Record<string, any[]>>)=> useCallback((eventArgs?: {type:string} | Array<{type:string}>)=>{
   if (!eventArgs) {
     return;
   }
@@ -218,4 +276,44 @@ export const usePathChange = (pathname?: string, sandbox?: Sandbox) => {
     }
     sandbox.dispatchPathChange(pathname);
   }, [pathname, sandbox]);
+};
+
+export const usePrefetch = (props: {
+  children?: React.ReactNode
+  prefetch?: boolean | string[]
+}) => {
+  const checkPrefetch = usePersistFn(() => {
+    if (!props.prefetch) {
+      return;
+    }
+    const arry: IRouteProps[] = [];
+    const fetchAll = typeof props.prefetch === 'boolean' && props.prefetch;
+    const appList = Array.isArray(props.prefetch) ? props.prefetch : [];
+    for (const child of React.Children.toArray(props.children)) {
+      if (!React.isValidElement(child)) {
+        continue;
+      }
+      if (child.type !== Route) {
+        continue;
+      }
+      const childProps = child.props as IRouteProps;
+      if (fetchAll) {
+        arry.push(childProps);
+        continue;
+      } else if (childProps.appId && appList.includes(childProps.appId)) {
+        arry.push(childProps);
+      }
+    }
+    if (arry.length) {
+      Log.info('starting prefetch', arry);
+      prefetch(arry);
+    }
+  });
+
+  /**
+   * 只判断一次
+   */
+  useEffect(() => {
+    checkPrefetch();
+  }, [checkPrefetch]);
 };

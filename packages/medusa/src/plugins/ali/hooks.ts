@@ -6,7 +6,8 @@ import usePersistFn from '../../hooks/use-persist-fn';
 import {appendAssets} from '../common/assets';
 import {getGlobalProp, noteGlobalProps} from '../../utils/umd';
 import {setCache} from './icestark';
-import {beforeStartApp, beforeStopApp, IRestContext} from '../common/hooks';
+import {beforeStartApp, beforeStopApp, IRestContext, useProps} from '../common/hooks';
+import Log from '../../utils/log';
 
 export const useStarApp = (options: {
   passProps: IRouteProps & IRestContext
@@ -14,24 +15,43 @@ export const useStarApp = (options: {
   setLoading: (b: boolean) => void
 
 }) => {
-  const {passProps: props, ref, setLoading} = options;
+  const {passProps, ref, setLoading} = options;
 
   const refSandbox = useRef<Sandbox>();
 
   const refIdList = useRef<Array<string>>([]);
 
-  const domId = props.rootId || props.defaultRootId;
+  const props = useProps(passProps);
+
+  const domId = props.rootId || (props.framework === 'qiankun' ? 'root' : props.defaultRootId);
+
+  const refContainer = useRef<HTMLDivElement>();
+
+  const refUnmounted = useRef(false);
+  const checkUnmounted = usePersistFn(() => {
+    if (refUnmounted.current) {
+      Log.warn('子应用已被卸载，取消继续执行。');
+      return true;
+    }
+    return false;
+  });
 
   const loadApp = usePersistFn(async () => {
     if (!ref.current) {
       return;
     }
 
-    const {assetsOptions, ele, basename} = beforeStartApp({props, ref, setLoading, domId});
+    const {ele, basename} = beforeStartApp({props, ref, setLoading, domId});
+
+    refContainer.current = ele;
 
     setCache('root', 'medusa');
 
-    const {jsList, cssList, assetPublicPath, execScripts, getExternalStyleSheets} = await parseAssets(assetsOptions, props.layer);
+    const {jsList, cssList, assetPublicPath, execScripts, getExternalStyleSheets} = await parseAssets(props, props.layer);
+
+    if (checkUnmounted()) {
+      return;
+    }
 
     if (!refSandbox.current) {
       refSandbox.current = new Sandbox({
@@ -42,14 +62,12 @@ export const useStarApp = (options: {
         container: ele,
         framework: props.framework,
         assetPublicPath,
+        props: props.props,
+        excludeAssetFilter: props.excludeAssetFilter,
       });
     }
 
     const sandbox = refSandbox.current;
-
-    if (!sandbox.getSandbox()) {
-      sandbox.init();
-    }
 
     const cssContents = await getExternalStyleSheets?.() || [];
 
@@ -57,7 +75,8 @@ export const useStarApp = (options: {
       cssList,
       styleList: cssContents,
       jsList,
-      container: props.scopeCss ? ele : undefined
+      container: ele,
+      scopeCss: props.scopeCss === true ? 'property' : props.scopeCss
     });
 
     refIdList.current = idList;
@@ -75,13 +94,17 @@ export const useStarApp = (options: {
       }
     });
     await execScripts?.(sandbox);
+    if (checkUnmounted()) {
+      return sandbox.clear();
+    }
     sandbox.runFinal();
     setLoading(false);
   });
 
   const unloadApp = usePersistFn(async () => {
-    beforeStopApp({props, domId, sandBox: refSandbox.current, idList: refIdList.current});
+    beforeStopApp({props, container: refContainer.current, sandBox: refSandbox.current, idList: refIdList.current});
     refSandbox.current = undefined;
+    refUnmounted.current = true;
   });
 
   return {

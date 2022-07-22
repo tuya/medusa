@@ -127,3 +127,9 @@ export const registerPathChange = (callback: (path: string) => void) => {
     window[TY_SUB_PATH_CHANGE_CALLBACK] = undefined;
   };
 };
+
+export const hasChildRunning = () => {
+  const obj = topWindow.tyMicroApp?.apps || {};
+  return Object.keys(obj).length !== 0;
+};
+

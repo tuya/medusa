@@ -7,6 +7,7 @@ export type AssetItem = {
   id?: string
   fetching?: Promise<any>
   hasRisk?: boolean
+  attrs?: Array<{key: string, value: string}>
 }
 
 
@@ -57,14 +58,22 @@ export const fetchContents = (src: string, caches: Array<Promise<string>>, fetch
       return resolve('');
     }
     const fetching = fetchFn(src)
-        .then((resp)=>resp.text())
+        .then((resp)=>{
+          if (resp.status === 200) {
+            return resp.text();
+          }
+          caches[src] = undefined;
+          console.error(`[MED]: fetch ${src} failed`);
+          return '';
+        })
         .then((text) => {
           resolve(text);
           return text;
         })
         .catch((err) => {
           caches[src] = undefined;
-          reject(err);
+          console.error(`[MED]: fetch ${src} failed`, err);
+          resolve('');
         });
     caches[src] = fetching;
   });
@@ -83,12 +92,12 @@ export const resetUrl = (url: string, assetPublicPath?: string) => {
 
 export const getStyleContents = (list: AssetItem[]) => {
   return Promise.all(list.map((item) => {
-    return new Promise<string>((resolve, reject) => {
+    return new Promise<{content: string, attrs?: Array<{key: string, value: string}>}>((resolve, reject) => {
       if (item.fetching) {
-        item.fetching.then(resolve).catch(reject);
+        item.fetching.then((str) => resolve({content: str || '', attrs: item.attrs})).catch(reject);
         return;
       }
-      resolve(item.content || '');
+      resolve({content: item.content || '', attrs: item.attrs});
     });
   }));
 };

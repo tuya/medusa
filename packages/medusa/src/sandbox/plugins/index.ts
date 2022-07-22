@@ -27,6 +27,17 @@ export default class PluginSystem implements IBasePlugin {
     }
     return undefined;
   }
+
+  proxyHas(target: any, p: PropertyKey): boolean | undefined {
+    for (const plugin of this.plugins) {
+      const res = plugin.proxyHas?.(target, p);
+      if (res !== undefined) {
+        return res;
+      }
+    }
+    return undefined;
+  }
+
   clear(): void {
     this.plugins.forEach((p) => p.clear());
   }

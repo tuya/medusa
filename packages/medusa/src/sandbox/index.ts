@@ -11,11 +11,17 @@ import IceStarkPlugin from './plugins/icestark';
 import ZoePlugin from './plugins/zoe';
 import {listenNativeEvents, listenRoutes} from './listener';
 import {ILifecycle, validateExportLifecycle} from '../plugins/ali/qiankun';
-import {topWindow, TY_SUB_APP_ID, TY_SUB_BASE_NAME, TY_SUB_MOUNT_CALLBACK, TY_SUB_PUBLIC_PATH, TY_SUB_UNMOUNT_CALLBACK} from '../common';
+import {
+  topWindow,
+  TY_STORE_CACHE_LIST_VAR,
+  TY_SUB_APP_ID, TY_SUB_BASE_NAME, TY_SUB_MOUNT_CALLBACK,
+  TY_SUB_PUBLIC_PATH, TY_SUB_UNMOUNT_CALLBACK
+} from '../common';
 declare global {
   interface Window {
-    __tyParentWindow?: any
+    _tyGlobalWindow?: any
     _currentSandbox?: any
+    [TY_STORE_CACHE_LIST_VAR]?: Array<{unsubscribe?: () => void}>
     next?: {
       router?: {
         push: (url: string, as?: string) => void,
@@ -59,6 +65,12 @@ export default class Sandbox {
   public lifecycle: ILifecycle | string | undefined
   public sandbox: Window | undefined;
 
+  private _initSandbox?: Record<string, any>
+
+  private _unmounted?: boolean
+
+  private _initialProps?: Record<string, any>
+
   constructor(options?: {
     globals?: Array<string>,
     appId?: string,
@@ -68,6 +80,9 @@ export default class Sandbox {
     framework?: 'icestark' | 'qiankun' | 'zoe' | 'next' | 'ty-next'
     assetPublicPath?: string
     nextVersion?: number,
+    props?: Record<string, any>
+    excludeAssetFilter?: (assetUrl: string) => boolean
+    injectGlobals?: Record<string, any>
   }) {
     if (!window.Proxy) {
       throw new Error('Sorry, window.Proxy is not defined !! ');
@@ -80,25 +95,35 @@ export default class Sandbox {
     this._basename = options?.basename;
     this._container = options?.container;
     this._assetPublicPath = options?.assetPublicPath;
+    this._initSandbox = options?.injectGlobals;
 
     this._pluginSystem = new PluginSystem;
     this._pluginSystem.plugins.push(new WebpackPlugin(this._appId));
 
+    this._initialProps = options?.props;
+
     if (options?.framework === 'next' || options?.framework === 'ty-next') {
       this._pluginSystem.plugins.push(new NextPlugin(
-          this._appId,
-          this._container as HTMLElement,
-          options.basename,
-          options.nextVersion
+          {
+            appId: this._appId,
+            container: this._container as HTMLElement,
+            basename: options.basename,
+            nextVersion: options.nextVersion,
+            excludeAssetFilter: options.excludeAssetFilter,
+            assetPublicPath: options.assetPublicPath
+          }
       ));
       this._isNext = true;
     } else if (options?.framework === 'icestark' || options?.framework === 'qiankun') {
-      this._pluginSystem.plugins.push(new IceStarkPlugin(
-          options.framework,
-          this._assetPublicPath,
-          this._container,
-          this._basename
-      ));
+      this._pluginSystem.plugins.push(new IceStarkPlugin({
+        framework: options.framework,
+        assetPublicPath: this._assetPublicPath,
+        container: this._container,
+        basename: this._basename,
+        props: options.props,
+        excludeAssetFilter: options.excludeAssetFilter,
+        appId: this._appId
+      }));
     } else if (options?.framework === 'zoe') {
       this._pluginSystem.plugins.push(new ZoePlugin(
         this._appId!,
@@ -107,7 +132,9 @@ export default class Sandbox {
         this._basename
       ));
     } else {
-      this._pluginSystem.plugins.push(new CommonPlugin);
+      this._pluginSystem.plugins.push(new CommonPlugin({
+        excludeAssetFilter: options?.excludeAssetFilter,
+      }));
     }
   }
 
@@ -124,7 +151,7 @@ export default class Sandbox {
     const {propertyAdded, originalValues} = this;
 
     const proxyWindow = Object.create(null) as Window;
-    const originalWindow = window.__tyParentWindow || window;
+    const originalWindow = window._tyGlobalWindow || window;
 
     listenNativeEvents(proxyWindow, this.eventListeners, this.timeoutIds, this.intervalIds);
 
@@ -142,6 +169,12 @@ export default class Sandbox {
     if (this._assetPublicPath) {
       proxyWindow[TY_SUB_PUBLIC_PATH] = this._assetPublicPath;
     }
+
+    for (const key in this._initSandbox) {
+      proxyWindow[key] = this._initSandbox[key];
+    }
+
+    proxyWindow[TY_STORE_CACHE_LIST_VAR] = [];
 
     this._pluginSystem.init(proxyWindow);
 
@@ -201,11 +234,11 @@ export default class Sandbox {
         if (['top', 'window', 'self', 'globalThis'].includes(p as string)) {
           return sandbox;
         }
-        if (p === '__tyParentWindow') {
-          return originalWindow[p] || originalWindow;
-        }
         if (p === 'eval') {
           return eval;
+        }
+        if (p === '_tyGlobalWindow') {
+          return originalWindow[p] || originalWindow;
         }
         if (_globals.includes(p as string) || TY_GLOBAL_VALUES.includes(p as string)) {
           return originalWindow[p];
@@ -240,6 +273,10 @@ export default class Sandbox {
         }
       },
       has: (target: any, key: PropertyKey): boolean => {
+        const res = this._pluginSystem.proxyHas(target, key);
+        if (res !== undefined) {
+          return res;
+        }
         return key in target || key in topWindow;
       },
     });
@@ -255,6 +292,10 @@ export default class Sandbox {
   }
 
   execScriptInSandbox(script: string, src?: string): void {
+    if (this._unmounted) {
+      return;
+    }
+
     // create sandbox before exec script
     if (!this.sandbox) {
       this.init();
@@ -286,7 +327,7 @@ export default class Sandbox {
     const {[TY_SUB_UNMOUNT_CALLBACK]: unmount, [TY_SUB_MOUNT_CALLBACK]: mount} = (this.sandbox as any) || {};
 
     if (mount && unmount) {
-      mount?.({container: this._container});
+      mount?.({container: this._container, ...this._initialProps || {}});
       this._frameWorkUnmount = () => {
         unmount({container: this._container});
       };
@@ -319,7 +360,14 @@ export default class Sandbox {
       }
     });
 
+    for (const unsub of this.sandbox?.[TY_STORE_CACHE_LIST_VAR] || []) {
+      Log.info('清除未卸载的监听事件 ===>', unsub);
+      unsub?.unsubscribe?.();
+    }
+
     this.unlisten();
+
+    this._unmounted = true;
     Log.info('退出沙箱');
   }
 

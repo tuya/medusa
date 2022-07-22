@@ -1,5 +1,5 @@
 import ReactDOM from 'react-dom';
-import React, {useRef} from 'react';
+import React, {useMemo, useRef} from 'react';
 import Layer from '../../utils/path';
 import {IRouteProps} from '../../route';
 import Sandbox from '../../sandbox';
@@ -21,7 +21,28 @@ export type IRestContext = {
   onAppLeave?: (id:string) => void
   onAppLoading: (b: boolean) => void
   onAppError: (str?: string) => void
+  fetch?: typeof fetch
+  getTemplate?: (tpl: string) => string
 }
+
+export const useProps = (props: IRouteProps & IRestContext) => {
+  return useMemo(() => {
+    let assetsOptions = {...props, query: props.queryStr};
+
+    if (props.urlMap) {
+      for (const pathname in props.urlMap) {
+        const layer = new Layer(pathname);
+        layer.match(props.path);
+        if (layer.isMatched) {
+          const obj = props.urlMap[pathname] || {};
+          assetsOptions = {...assetsOptions, ...obj};
+          break;
+        }
+      }
+    }
+    return assetsOptions;
+  }, [props]);
+};
 
 export const beforeStartApp = (options: {
   props: IRouteProps & IRestContext
@@ -42,6 +63,8 @@ export const beforeStartApp = (options: {
   ref.current!.innerHTML = '';
   const ele = document.createElement('div');
   ele.id = domId;
+  ele.innerHTML = props.initHtmlStr || '';
+  ele.setAttribute('data-medusa', ele.id);
   ref.current!.appendChild(ele);
 
   props.appId && setMountedNode(props.appId, ele.id);
@@ -49,32 +72,19 @@ export const beforeStartApp = (options: {
 
   setLoading(true);
 
-  let assetsOptions = {...props, query: props.queryStr};
-
-  if (props.urlMap) {
-    for (const pathname in props.urlMap) {
-      const layer = new Layer(pathname);
-      layer.match(props.path);
-      if (layer.isMatched) {
-        const obj = props.urlMap[pathname] || {};
-        assetsOptions = {...assetsOptions, ...obj};
-        break;
-      }
-    }
-  }
-  return {assetsOptions, ele, basename};
+  return {ele, basename};
 };
 
 export const beforeStopApp = (options: {
   props: IRouteProps & IRestContext
-  domId: string
+  container?: HTMLDivElement
   sandBox?: Sandbox
   idList?: string[]
 }) => {
-  const {props, domId, sandBox, idList} = options;
+  const {props, container, sandBox, idList} = options;
 
   if (props.autoUnmount) {
-    const ele = document.getElementById(domId) as any;
+    const ele = container as any;
     if (ele?._reactRootContainer?.unmount) {
       Log.info('Auto unmount react node!');
       ele._reactRootContainer.unmount();
@@ -105,21 +115,41 @@ export const useStarApp = (options: {
   setLoading: (b: boolean) => void
 
 }) => {
-  const {passProps: props, ref, setLoading} = options;
+  const {passProps, ref, setLoading} = options;
 
   const refSandbox = useRef<Sandbox>();
 
   const refIdList = useRef<Array<string>>([]);
 
+  const refContainer = useRef<HTMLDivElement>();
+
+  const props = useProps(passProps);
+
   const domId = props.rootId || props.defaultRootId;
+
+  const refUnmounted = useRef(false);
+  const checkUnmounted = usePersistFn(() => {
+    if (refUnmounted.current) {
+      Log.warn('子应用已被卸载，取消继续执行。');
+      return true;
+    }
+    return false;
+  });
 
   const loadApp = usePersistFn(async () => {
     if (!ref.current) {
       return;
     }
 
-    const {assetsOptions, ele, basename} = beforeStartApp({props, ref, setLoading, domId});
-    const {jsList, cssList, assetPublicPath, execScripts, getExternalStyleSheets} = await parseAssets(assetsOptions, props.layer);
+    const {ele, basename} = beforeStartApp({props, ref, setLoading, domId});
+
+    refContainer.current = ele;
+
+    const {jsList, cssList, assetPublicPath, execScripts, getExternalStyleSheets} = await parseAssets(props, props.layer);
+
+    if (checkUnmounted()) {
+      return;
+    }
 
     if (!refSandbox.current) {
       refSandbox.current = new Sandbox({
@@ -130,14 +160,11 @@ export const useStarApp = (options: {
         container: ele,
         framework: props.framework,
         assetPublicPath,
+        excludeAssetFilter: props.excludeAssetFilter,
       });
     }
 
     const sandbox = refSandbox.current;
-
-    if (!sandbox.getSandbox()) {
-      sandbox.init();
-    }
 
     const cssContents = await getExternalStyleSheets?.() || [];
 
@@ -145,7 +172,8 @@ export const useStarApp = (options: {
       cssList,
       styleList: cssContents,
       jsList,
-      container: props.scopeCss ? ele : undefined
+      container: ele,
+      scopeCss: props.scopeCss
     });
 
     refIdList.current = idList;
@@ -164,13 +192,17 @@ export const useStarApp = (options: {
     });
 
     await execScripts?.(sandbox);
+    if (checkUnmounted()) {
+      return sandbox.clear();
+    }
     sandbox.runFinal();
     setLoading(false);
   });
 
   const unloadApp = usePersistFn(async () => {
-    beforeStopApp({props, domId, sandBox: refSandbox.current, idList: refIdList.current});
+    beforeStopApp({props, container: refContainer.current, sandBox: refSandbox.current, idList: refIdList.current});
     refSandbox.current = undefined;
+    refUnmounted.current = true;
   });
 
   return {

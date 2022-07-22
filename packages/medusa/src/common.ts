@@ -4,8 +4,8 @@ const findTopWindow = () => {
   }
   return new Function('return window')();
   // let win:any = window;
-  // while (win.__tyParentWindow) {
-  //   win = win.__tyParentWindow;
+  // while (win._tyGlobalWindow) {
+  //   win = win._tyGlobalWindow;
   // }
   // return win;
 };
@@ -17,7 +17,7 @@ export interface IMyWindow extends Window {
     apps?: {[key:string]: {domId?:string, basename?: string}}
     defaultAppId: string
   }
-  __tyParentWindow?: any
+  _tyGlobalWindow?: any
   __tyEventEmitter?: any
   __tyRouterSystem?: any
   __tyHistory?: any
@@ -40,6 +40,9 @@ export const TY_SUB_PATH_CHANGE_CALLBACK = 'MED_SUB_PATH_CHANGE_CALLBACK';
 export const TY_APP_NAME_VAR = '_tyMicroApp';
 
 export const HIJACK_EVENTS_NAME = /^(hashchange|popstate)$/i;
+
+export const TY_STORE_CACHE_LIST_VAR = '__tyCachedSubList';
+
 
 /**
  * eval('window')

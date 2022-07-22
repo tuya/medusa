@@ -29,7 +29,7 @@ class BrowerParser {
     list.map(this.replaceWithComment);
   }
 
-  extract(fetchFn?: FetchFn) {
+  extract(fetchFn?: FetchFn, onUrlFix?: (url: string) => string | undefined) {
     const scriptEles = Array.from(this.document.getElementsByTagName('script'));
     const inlineStyleEles = Array.from(this.document.getElementsByTagName('style'));
     const externalStyleEles = Array.from(this.document.getElementsByTagName('link')).filter((t) => {
@@ -45,6 +45,13 @@ class BrowerParser {
     const scripts = scriptEles.map((t) => {
       let src = t.src;
       if (src) {
+        if (onUrlFix) {
+          const fixUrl = onUrlFix(src);
+          if (!fixUrl) {
+            return null;
+          }
+          src = fixUrl;
+        }
         src = resetUrl(src, this.assetPublicPath);
         if (t.getAttribute('entry')) {
           entry = src;
@@ -76,12 +83,20 @@ class BrowerParser {
       return {
         content: code,
         async: false,
+        attrs: Array.from(t.attributes).map((t) => ({key: t.name, value: t.value}))
       };
     });
 
     const externalStyles = externalStyleEles.map((t) => {
       let src = t.href;
       if (src) {
+        if (onUrlFix) {
+          const fixUrl = onUrlFix(src);
+          if (!fixUrl) {
+            return null;
+          }
+          src = fixUrl;
+        }
         src = resetUrl(src, this.assetPublicPath);
         return {
           src,
@@ -94,7 +109,7 @@ class BrowerParser {
         content: '',
         async: false,
       };
-    });
+    }).filter(Boolean);
 
     this.removeElements(scriptEles);
     this.removeElements(inlineStyleEles);

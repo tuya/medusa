@@ -4,14 +4,17 @@ import {headProxy} from './proxy_document';
 import {isWindowFunction} from '../../utils/proxys/fn';
 import {EventCenterForMicroApp} from '../../plugins/jd-micro/events';
 
-const proxyDocument = (doc: HTMLDocument, sandbox: Window, container: HTMLElement) => {
+const proxyDocument = (doc: HTMLDocument, sandbox: Window, container: ShadowRoot) => {
   const proxy = new Proxy(doc, {
     get(target, p: string) {
       const value = target[p];
       if (['head', 'body'].includes(p)) {
         const ele = container.querySelector(`micro-app-${p}`);
         if (ele) {
-          return headProxy(ele as HTMLHeadElement, sandbox);
+          return headProxy({
+            head: ele as HTMLHeadElement,
+            sandbox
+          });
         }
         return null;
       }
@@ -40,7 +43,7 @@ const proxyDocument = (doc: HTMLDocument, sandbox: Window, container: HTMLElemen
         };
       }
       if (p === 'getElementById') {
-        return (str: string) => container.querySelector(`#${str}`);
+        return (str: string) => container.getElementById?.(`${str}`);
       }
       if (p === 'getElementsByClassName') {
         return (str: string) => container.querySelectorAll(`.${str}`);
@@ -78,11 +81,11 @@ export default class ZoePlugin implements IBasePlugin {
 
   public name: string
 
-  public container: HTMLElement
+  public container: ShadowRoot
 
   constructor(name: string, container: HTMLElement, assetPublicPath?: string, basename?: string,) {
     this.name = name;
-    this.container = container;
+    this.container = container as unknown as ShadowRoot;
     this.assetPublicPath = assetPublicPath;
     this.basename = basename;
   }

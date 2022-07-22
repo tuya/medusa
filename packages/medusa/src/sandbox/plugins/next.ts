@@ -9,24 +9,90 @@ import {headProxy} from './proxy_document';
 import {NEXT_HOSTED_VALUES} from '../globals';
 import {isWindowFunction} from '../../utils/proxys/fn';
 
-const proxyDocument = (doc: HTMLDocument, sandbox: Window, appId?: string) => {
+class HookHistory {
+  get state() {
+    const rstate = topWindow.history.state;
+    if (typeof rstate === 'object') {
+      return rstate?._next || rstate;
+    }
+    return rstate;
+  }
+
+  get scrollRestoration() {
+    return topWindow.history.scrollRestoration;
+  }
+
+  set scrollRestoration(v: any) {
+    topWindow.history.scrollRestoration = v;
+  }
+
+  get length() {
+    return topWindow.history.length;
+  }
+
+  formatState(data: any) {
+    if (data && typeof data === 'object' && data.as) {
+      const rstate = topWindow.history.state;
+      return {
+        ...data,
+        _next: data,
+        url: rstate?.url,
+      };
+    }
+    return data;
+  }
+
+  back(): void {
+    topWindow.history.back();
+  }
+  forward(): void {
+    topWindow.history.forward();
+  }
+  go(delta?: number): void {
+    topWindow.history.go(delta);
+  }
+  replaceState(data: any, unused: string, url?: string | URL): void {
+    topWindow.history.replaceState(this.formatState(data), unused, url as any);
+  }
+  pushState(data: any, unused: string, url?: string | URL): void {
+    topWindow.history.pushState(this.formatState(data), unused, url as any);
+  }
+}
+
+const proxyDocument = (
+    op: {
+    doc: Document,
+    sandbox: Window,
+    appId?: string,
+    excludeAssetFilter?: (assetUrl: string) => boolean
+    assetPublicPath?: string
+    container?: HTMLElement
+  }
+) => {
+  const {doc, sandbox, appId, excludeAssetFilter, assetPublicPath, container} = op;
   const proxy = new Proxy(doc, {
     get(target, p: string) {
       const value = target[p];
       if (['head', 'body'].includes(p)) {
-        return headProxy(value, sandbox, (head, str) => {
-          if (!appId) {
-            return;
-          }
-          if (str === 'insertBefore') {
-            return (node: HTMLElement, anchor: HTMLElement) => {
-              if (node?.getAttribute?.('data-ncss-href')) {
-                node.setAttribute(`${appId}-data-ncss-href`, 'true');
-              }
-              Log.info('nextjs insertBefore rewrite!', node, anchor);
-              head.insertBefore(node, anchor);
-            };
-          }
+        return headProxy({
+          head: value,
+          sandbox,
+          injection: (head, str) => {
+            if (!appId) {
+              return;
+            }
+            if (str === 'insertBefore') {
+              return (node: HTMLElement, anchor: HTMLElement) => {
+                if (node?.getAttribute?.('data-ncss-href')) {
+                  node.setAttribute(`${appId}-data-ncss-href`, 'true');
+                }
+                Log.info('nextjs insertBefore rewrite!', node, anchor);
+                head.insertBefore(node, anchor);
+              };
+            }
+          },
+          excludeAssetFilter,
+          assetPublicPath
         });
       }
       if (p === 'querySelectorAll') {
@@ -44,6 +110,9 @@ const proxyDocument = (doc: HTMLDocument, sandbox: Window, appId?: string) => {
             const ele = document.createElement('script');
             ele.textContent = JSON.stringify(sandbox['__NEXT_DATA__'] || {});
             return ele;
+          }
+          if (elementId === '__next') {
+            return container || topWindow.document.getElementById(elementId);
           }
           return topWindow.document.getElementById(elementId);
         };
@@ -73,7 +142,21 @@ export default class NextPlugin implements IBasePlugin {
 
   public appId?: string
 
-  constructor(appId?: string, container?: HTMLElement, basename?: string, nextVersion?: number) {
+  private _hookHistory = new HookHistory
+
+  private _excludeAssetFilter?: (assetUrl: string) => boolean
+
+  private _assetPublicPath?: string
+
+  constructor(options: {
+    appId?: string,
+    container?: HTMLElement,
+    basename?: string,
+    nextVersion?: number,
+    excludeAssetFilter?: (assetUrl: string) => boolean
+    assetPublicPath?: string
+  }) {
+    const {appId, container, basename, nextVersion, excludeAssetFilter, assetPublicPath} = options;
     this.routerPrefix = basename;
     this.container = container;
     this.appId = appId;
@@ -81,9 +164,19 @@ export default class NextPlugin implements IBasePlugin {
       this.routerPrefix = undefined;
     }
     this.nextVersion = nextVersion;
+    this._excludeAssetFilter = excludeAssetFilter;
+    this._assetPublicPath = assetPublicPath;
   }
 
   clear(): void {
+    if (!this.appId) {
+      return;
+    }
+    const links = topWindow.document.querySelectorAll(`style[${this.appId}-data-ncss-href]`);
+    links.forEach((item) => {
+      Log.info('remove nextjs dynamic style', item);
+      item.remove();
+    });
   }
 
   runFinal(): void {
@@ -111,8 +204,22 @@ export default class NextPlugin implements IBasePlugin {
     if (p === 'document') {
       const value = Reflect.get(originWindow, p);
       return {
-        value: proxyDocument(value, sandbox, this.appId)
+        value: proxyDocument({
+          doc: value,
+          sandbox,
+          appId: this.appId,
+          excludeAssetFilter: this._excludeAssetFilter,
+          assetPublicPath: this._assetPublicPath,
+          container: this.container,
+        })
       };
+    }
+
+    if (p === 'history') {
+      const hackedEnable = Reflect.get(target, '__history__hacked__');
+      return hackedEnable ? {
+        value: this._hookHistory
+      } : undefined;
     }
     /**
      * next中默认的webpack 变量
@@ -136,6 +243,7 @@ export default class NextPlugin implements IBasePlugin {
 
   public init(proxyWindow: Window) {
     Reflect.set(proxyWindow, 'document', null);
+    Reflect.set(proxyWindow, 'history', null);
     NEXT_HOSTED_VALUES.forEach((k) => {
       Reflect.set(proxyWindow, k, undefined);
     });

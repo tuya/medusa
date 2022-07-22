@@ -83,7 +83,7 @@ export default class CreateApp {
       this.idList.push(id);
       const element = document.createElement('style');
       element.id = id;
-      element.innerHTML = str;
+      element.innerHTML = str.content;
       headElement.appendChild(element);
     }));
     fragment.appendChild(headElement);

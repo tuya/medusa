@@ -8,6 +8,8 @@ export interface IBasePlugin {
 
   proxyGet(target: any, p: PropertyKey, sandbox: Window, originWindow: Window): {value: any} | undefined
 
+  proxyHas?(target: any, p: PropertyKey): boolean | undefined
+
   clear(): void
 
 }

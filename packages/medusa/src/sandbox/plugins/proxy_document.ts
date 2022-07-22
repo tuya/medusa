@@ -1,6 +1,7 @@
 import Log from '../../utils/log';
+import {resetUrl} from '../../html-parse/utils';
+import {parseScriptSrc} from '../../utils/url';
 import {isWindowFunction} from '../../utils/proxys/fn';
-
 
 /**
  * 如果这里是相对地址，就会有问题，所以要求子项目设置真实的地址。
@@ -20,30 +21,46 @@ const fetchScript = async (url: string, sandbox?: Window) => {
   }
 };
 
-export const headProxy = (head: HTMLHeadElement, sandbox?: Window, injection?: (target: HTMLHeadElement, p: PropertyKey) => any) => {
-  return new Proxy(head, {
+export const headProxy = (
+    op: {
+      head: HTMLHeadElement,
+      sandbox?: Window,
+      injection?: (target: HTMLHeadElement, p: PropertyKey) => any,
+      excludeAssetFilter?: (assetUrl: string) => boolean
+      assetPublicPath?: string
+    }
+) => {
+  return new Proxy(op.head, {
     get(target, p) {
       if (p === 'appendChild') {
         const appendChild = target[p];
         return function(...args) {
           const ele = args[0] as HTMLScriptElement;
           if (ele && ele.nodeName === 'SCRIPT' && ele.src) {
+            if (op.excludeAssetFilter?.(ele.src)) {
+              Log.info('当前script标签加载被沙箱放行！！', ele);
+              return appendChild.apply(op.head, args as any);
+            }
             Log.info('当前script标签加载被沙箱捕获！！', ele);
-            fetchScript(ele.src, sandbox);
+            let src = ele.src ? parseScriptSrc(ele.outerHTML) : '';
+            if (src && op.assetPublicPath) {
+              src = resetUrl(src, op.assetPublicPath);
+            }
+            fetchScript(src || ele.src, op.sandbox);
             return document.createElement('script');
           }
-          return appendChild.apply(head, args as any);
+          return appendChild.apply(op.head, args as any);
         };
       }
 
-      const injectValue = injection?.(target, p);
+      const injectValue = op.injection?.(target, p);
       if (injectValue) {
         return injectValue;
       }
 
       const value = target[p];
       if (isWindowFunction(value)) {
-        return value.bind(head);
+        return value.bind(op.head);
       }
       return value;
     },
@@ -54,12 +71,20 @@ export const headProxy = (head: HTMLHeadElement, sandbox?: Window, injection?: (
   });
 };
 
-export const proxyDocument = (doc: HTMLDocument, sandbox?: Window) => {
+export const proxyDocument = (
+    doc: HTMLDocument,
+    sandbox?: Window,
+    excludeAssetFilter?: (assetUrl: string) => boolean
+) => {
   return new Proxy(doc, {
     get(target, p) {
       const value = target[p];
       if (['body', 'head'].includes(p as string)) {
-        return headProxy(value, sandbox);
+        return headProxy({
+          head: value,
+          sandbox,
+          excludeAssetFilter
+        });
       }
       if (isWindowFunction(value)) {
         return value.bind(doc);

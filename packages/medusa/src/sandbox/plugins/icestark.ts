@@ -25,11 +25,24 @@ export default class IceStarkPlugin implements IBasePlugin {
 
   public assetPublicPath?: string
 
-  private _stateChangeCallback?: OnGlobalStateChangeCallback
+  private _excludeAssetFilter?: (assetUrl: string) => boolean
 
   private _unSub?: {unsubscribe: () => void}
 
-  constructor(framework: 'qiankun' | 'icestark', assetPublicPath?: string, container?: HTMLElement | string | undefined, basename?: string) {
+  private passProps?: Record<string, any>
+
+  private _appId: string | undefined
+
+  constructor(options: {
+    framework: 'qiankun' | 'icestark',
+    assetPublicPath?: string,
+    container?: HTMLElement | string | undefined,
+    basename?: string
+    props?: Record<string, any>
+    appId?: string
+    excludeAssetFilter?: (assetUrl: string) => boolean
+  }) {
+    const {framework, assetPublicPath, container, basename, props, excludeAssetFilter, appId} = options;
     this.framework = framework;
     this.assetPublicPath = assetPublicPath;
     this._container = container;
@@ -37,6 +50,9 @@ export default class IceStarkPlugin implements IBasePlugin {
       root: container,
       basename: basename
     });
+    this.passProps = props;
+    this._excludeAssetFilter = excludeAssetFilter;
+    this._appId = appId;
   }
 
   init(proxyWindow: Window) {
@@ -47,9 +63,6 @@ export default class IceStarkPlugin implements IBasePlugin {
     } else {
       topWindow[ICESTARK_NAME_SPACE] = topWindow[ICESTARK_NAME_SPACE] || {};
     }
-    this._unSub = subscribe((v) => {
-      this._stateChangeCallback?.(v, {});
-    });
   }
 
   proxyGet(_: any, p: PropertyKey, sandbox: Window, originWindow: Window) {
@@ -61,8 +74,14 @@ export default class IceStarkPlugin implements IBasePlugin {
     if (p === 'document') {
       const value = Reflect.get(originWindow, p);
       return {
-        value: proxyDocument(value, sandbox)
+        value: proxyDocument(value, sandbox, this._excludeAssetFilter)
       };
+    }
+  }
+
+  proxyHas(_: any, p: PropertyKey) {
+    if (p === ICESTARK_NAME_SPACE) {
+      return true;
     }
   }
 
@@ -73,10 +92,9 @@ export default class IceStarkPlugin implements IBasePlugin {
 
     this.lifecycle = cycle;
 
-    if (this.framework === 'qiankun' && this._container instanceof HTMLElement) {
-      const root = document.createElement('div');
-      root.id = 'root';
-      this._container.appendChild(root);
+    if (this.framework === 'qiankun' && this._container instanceof HTMLElement && this._container.parentElement) {
+      this._container.id = this._container.id || 'root';
+      this._container = this._container.parentElement;
     }
 
     const checkLifecycle = (container: HTMLElement | string, lifecycle: string | ILifecycle | undefined) => {
@@ -88,8 +106,13 @@ export default class IceStarkPlugin implements IBasePlugin {
             dispatch(state);
           },
           onGlobalStateChange: (callback) => {
-            this._stateChangeCallback = callback;
-          }
+            let prevState: any = {};
+            this._unSub = subscribe((v) => {
+              callback?.(v, prevState);
+              prevState = v;
+            });
+          },
+          ...this.passProps || {},
         });
         this._frameWorkUnmount = () => {
           lifecycle?.unmount({container});
@@ -102,11 +125,19 @@ export default class IceStarkPlugin implements IBasePlugin {
       return;
     }
 
+    if (this._appId && sandbox[this._appId] && checkLifecycle(this._container, sandbox[this._appId])) {
+      this.lifecycle = sandbox[this._appId];
+      return;
+    }
+
     if (this.framework === 'icestark') {
       const libraryName = Reflect.get(sandbox, 'ICESTARK')?.library;
       if (libraryName) {
         const lifecycle = Reflect.get(sandbox, libraryName) as ILifecycle | undefined;
-        lifecycle?.mount({container: this._container});
+        lifecycle?.mount({
+          container: this._container,
+          ...this.passProps || {},
+        });
         this._frameWorkUnmount = () => {
           lifecycle?.unmount({container: this._container!});
         };
@@ -115,7 +146,10 @@ export default class IceStarkPlugin implements IBasePlugin {
         return;
       }
       Log.warn('you are in icestark microapp, but we can not find library, do you call setLibraryName?');
+      return;
     }
+
+    Log.warn('you are in qiankun microapp, but we can not find lifecycle, do you call setLifecycle?');
   }
 
   proxySet(): boolean {
@@ -126,7 +160,6 @@ export default class IceStarkPlugin implements IBasePlugin {
     if (this._frameWorkUnmount) {
       this._frameWorkUnmount?.({container: this._container});
     }
-    this._stateChangeCallback = undefined;
     this._unSub?.unsubscribe();
   }
 }

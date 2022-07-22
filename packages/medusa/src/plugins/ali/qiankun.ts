@@ -13,6 +13,7 @@ export interface ILifecycle {
     container: HTMLElement | string
     setGlobalState?: (state?: Record<string, any>) => void
     onGlobalStateChange?: (callback: OnGlobalStateChangeCallback, fireImmediately?: boolean) => void
+    [key: string]: any
   }) => void
   unmount: (props: {container: HTMLElement | string}) => void
   bootstrap: () => void

@@ -8,7 +8,6 @@ const getRandomId = () => {
 };
 
 const appendCss = async (url:string, id:string) => {
-  const root = document.getElementsByTagName('head')[0];
   return new Promise((rs, rj) => {
     const element: HTMLLinkElement = document.createElement('link');
     element.id = id;
@@ -25,29 +24,52 @@ const appendCss = async (url:string, id:string) => {
     );
     element.addEventListener('load', () => rs(null), false);
 
-    root.appendChild(element);
+    /**
+     * 兼容next
+     */
+    const CSS_MOUNT_POINT = document.getElementById('__nc_mp__');
+    if (CSS_MOUNT_POINT) {
+      document.head.insertBefore(element, CSS_MOUNT_POINT);
+    } else {
+      document.head.appendChild(element);
+    }
   });
 };
 
-const appendInlineStyle = async (content:string, id:string) => {
-  const root = document.getElementsByTagName('head')[0];
+type IStyleITem = {content: string, attrs?: Array<{key: string, value: string}>}
+
+
+const appendInlineStyle = async (style:IStyleITem, id:string) => {
   const element = document.createElement('style');
   element.id = id;
-  element.innerHTML = content;
-  root.appendChild(element);
+  element.innerHTML = style.content;
+  style.attrs?.forEach((attr) => {
+    element.setAttribute(attr.key, attr.value);
+  });
+  /**
+   * 兼容next
+   */
+  const CSS_MOUNT_POINT = document.getElementById('__nc_mp__');
+  if (CSS_MOUNT_POINT) {
+    document.head.insertBefore(element, CSS_MOUNT_POINT);
+  } else {
+    document.head.appendChild(element);
+  }
 };
 
-const appendScopeStyle = async (content:string, container:HTMLElement) => {
+const appendScopeStyle = async (style:IStyleITem, container:HTMLElement, type: 'id' | 'property') => {
   const element = document.createElement('style');
-  element.innerHTML = content;
+  element.innerHTML = style.content;
   const parent = container.parentNode as HTMLDivElement;
   if (parent) {
     const id = parent.id;
     if (!id) {
       const randomId = getRandomId();
       parent.id = randomId;
+      parent.setAttribute('data-medusa', parent.id);
     }
-    const str = resetScope(`#${parent.id}`, content);
+    const prefix = type === 'property' ? `$[${parent.localName}][data-medusa="${parent.id}"]` : `#${parent.id}`;
+    const str = resetScope(prefix, style.content);
     element.innerHTML = str;
     parent.insertBefore(element, container);
   }
@@ -56,13 +78,14 @@ const appendScopeStyle = async (content:string, container:HTMLElement) => {
 /**
  * js文件缓存
  */
-const _scriptCache:{[key:string]:string} = {};
+export const _scriptCache:{[key:string]:string} = {};
 
 export const appendAssets = async (props: {
   jsList?: string[]
   cssList?: string[]
-  styleList?: string[]
+  styleList?: Array<IStyleITem>
   container?: HTMLElement
+  scopeCss?: 'id' | 'property' | boolean
 }) => {
   const idList: string[] = [];
 
@@ -78,13 +101,13 @@ export const appendAssets = async (props: {
     }));
   }
 
-  styleList?.forEach((str)=>{
-    if (props.container?.parentNode) {
-      appendScopeStyle(str, props.container);
+  styleList?.forEach((st)=>{
+    if (props.container?.parentNode && props.scopeCss) {
+      appendScopeStyle(st, props.container, props.scopeCss === true ? 'id' : props.scopeCss);
     } else {
       const id = `TUYA_INLINE_STYLE_${Math.random().toString(16).substr(2)}`;
       idList.push(id);
-      appendInlineStyle(str, id);
+      appendInlineStyle(st, id);
     }
   });
 
@@ -109,7 +132,11 @@ export const appendAssets = async (props: {
   };
 };
 
-export const execCommonScript = async (sandbox: Sandbox, scripts: AssetItem[], entry?: string) =>{
+export const execCommonScript = async (options: {
+  sandbox: Sandbox, scripts: AssetItem[], entry?: string
+  scriptJson?: Record<string, any>
+}) =>{
+  const {sandbox, scripts, entry, scriptJson} = options;
   const list: AssetItem[] = [];
 
   for (const script of scripts) {
@@ -130,6 +157,17 @@ export const execCommonScript = async (sandbox: Sandbox, scripts: AssetItem[], e
   });
 
   let exps: Record<string, any> | undefined = undefined;
+
+
+  for (const id in scriptJson || {}) {
+    sandbox.execScriptInSandbox(`
+      var st = document.createElement('script');
+      st.id = '${id}';
+      st.textContent = '${scriptJson![id]}';
+      st.setAttribute('type', 'application/json');
+      document.head.appendChild(st);
+    `);
+  }
 
   list.forEach((item) => {
     if (!item.content) {

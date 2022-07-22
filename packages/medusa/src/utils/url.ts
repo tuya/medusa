@@ -1,5 +1,7 @@
 import Url from 'url-parse';
 
+const SCRIPT_SRC_REGEX = /.*\ssrc=('|")?([^>'"\s]+)/;
+
 export const parseUrl = (url: string) => {
   const inst = new Url(url);
   return {
@@ -19,8 +21,11 @@ export const urlJoin = (list: string[], endsWithSlash?: boolean) => {
 };
 
 export const parseBaseName = (path?: string, passName?: string, params?: Record<string, any>) => {
-  if (!path) {
+  if (path === undefined) {
     return '/';
+  }
+  if (path === '') {
+    return path;
   }
   let basename = path.substring(0, path.lastIndexOf('/')) || '/';
   if (passName) {
@@ -69,5 +74,14 @@ export const removePrefix = (prefix: string, url: string) => {
     path = '/';
   }
   return path;
+};
+
+export const parseScriptSrc = (str?: string) => {
+  if (!str) {
+    return;
+  }
+  const div = document.createElement('div');
+  div.innerHTML = str;
+  return div.querySelector('script')?.src;
 };
 

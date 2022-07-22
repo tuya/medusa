@@ -4,7 +4,7 @@ import Sandbox from '../../sandbox';
 import {parseAssets} from '../../utils/assets';
 import usePersistFn from '../../hooks/use-persist-fn';
 import {appendAssets} from '../common/assets';
-import {beforeStartApp, beforeStopApp, IRestContext} from '../common/hooks';
+import {beforeStartApp, beforeStopApp, IRestContext, useProps} from '../common/hooks';
 import Log from '../../utils/log';
 
 
@@ -13,8 +13,11 @@ export const useCheckNext = (children?: React.ReactNode) => {
     const targetId = `${Math.random().toString(16).substr(2, 8)}__next`;
     let nextHost: HTMLElement|null = null;
     for (const ele of React.Children.toArray(children)) {
-      if (React.isValidElement(ele) && ele.props.next) {
-        nextHost = document.getElementById('__next');
+      if (React.isValidElement(ele)) {
+        const props = ele.props;
+        if (props.framework === 'next' || props.framework === 'ty-next') {
+          nextHost = document.getElementById('__next');
+        }
         break;
       }
     }
@@ -35,19 +38,35 @@ export const useStarApp = (options: {
   setLoading: (b: boolean) => void
 
 }) => {
-  const {passProps: props, ref, setLoading} = options;
+  const {passProps, ref, setLoading} = options;
 
   const refSandbox = useRef<Sandbox>();
 
   const refIdList = useRef<Array<string>>([]);
 
+  const refContainer = useRef<HTMLDivElement>();
+
+  const props = useProps(passProps);
+
   const domId = props.rootId || '__next';
+
+  const refUnmounted = useRef(false);
+  const checkUnmounted = usePersistFn(() => {
+    if (refUnmounted.current) {
+      Log.warn('子应用已被卸载，取消继续执行。');
+      return true;
+    }
+    return false;
+  });
 
   const loadApp = usePersistFn(async () => {
     if (!ref.current) {
       return;
     }
-    const {assetsOptions, ele, basename} = beforeStartApp({props, ref, setLoading, domId});
+    const {ele, basename} = beforeStartApp({props, ref, setLoading, domId});
+
+    refContainer.current = ele;
+    refUnmounted.current = false;
 
     const {
       jsList,
@@ -55,7 +74,17 @@ export const useStarApp = (options: {
       assetPublicPath,
       execScripts,
       getExternalStyleSheets,
-    } = await parseAssets({...assetsOptions, next: props.html, html: undefined}, props.layer);
+    } = await parseAssets({
+      ...props,
+      next: props.html,
+      html: undefined,
+      onUrlFix: props.onUrlFix,
+    }, props.layer);
+
+
+    if (checkUnmounted()) {
+      return;
+    }
 
     if (!refSandbox.current) {
       refSandbox.current = new Sandbox({
@@ -67,21 +96,20 @@ export const useStarApp = (options: {
         framework: 'next',
         assetPublicPath,
         nextVersion: props.tyNextVersion,
+        excludeAssetFilter: props.excludeAssetFilter,
+        injectGlobals: props.injectGlobals,
       });
     }
 
     const sandbox = refSandbox.current;
 
-    if (!sandbox.getSandbox()) {
-      sandbox.init();
-    }
-
     const cssContents = getExternalStyleSheets ? await getExternalStyleSheets() : [];
-
     const {idList, jsSourceList} = await appendAssets({
       cssList,
-      styleList: cssContents,
-      jsList
+      styleList: cssContents.filter((t) => !t.attrs?.find((t) => t.key.includes('data-next-dev-hide-body'))),
+      jsList,
+      container: ele,
+      scopeCss: props.scopeCss,
     });
 
     refIdList.current = idList;
@@ -90,13 +118,20 @@ export const useStarApp = (options: {
     });
 
     await execScripts?.(sandbox);
+
+    if (checkUnmounted()) {
+      sandbox.clear();
+      return;
+    }
+
     sandbox.runFinal();
     setLoading(false);
   });
 
   const unloadApp = usePersistFn(async () => {
-    beforeStopApp({props, domId, sandBox: refSandbox.current, idList: refIdList.current});
+    beforeStopApp({props, container: refContainer.current, sandBox: refSandbox.current, idList: refIdList.current});
     refSandbox.current = undefined;
+    refUnmounted.current = true;
   });
 
   return {

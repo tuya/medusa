@@ -1,8 +1,11 @@
 import {BehaviorSubject} from 'rxjs/internal/BehaviorSubject';
+import {TY_STORE_CACHE_LIST_VAR} from '../common';
+
 
 type ITyStore = {
   __tyReduxStore?: BehaviorSubject<any>
   __tyStoreMap?: Map<string, BehaviorSubject<any>>
+  [TY_STORE_CACHE_LIST_VAR]?: any[]
 }
 
 export const TY_STORE_NAMESPACE = 'TY_STORE_NAMESPACE';
@@ -45,7 +48,7 @@ export const registerRedux = (store:Store) => {
     return;
   }
   if (storeWin.__tyReduxStore) {
-    throw new Error('Currently we only support one redux store, If you realy need multiple instance please contact us !!');
+    throw new Error('Currently we only support one redux store, If you realy need multiple instance please contact tuya-fe-efficacy !!');
   }
   storeWin.__tyReduxStore = reduxSubject;
   return reduxSubject;
@@ -72,13 +75,42 @@ const getSubject = (key?: string) => {
   return subject;
 };
 
+const rmSubject = (key?: string) => {
+  key = key || TY_STORE_NAMESPACE;
+  if (!storeWin.__tyStoreMap) {
+    storeWin.__tyStoreMap = new Map;
+  }
+  if (storeWin.__tyStoreMap.has(key)) {
+    storeWin.__tyStoreMap.delete(key);
+  }
+};
+
 export const subscribe = (listener: (v: Record<string, any>) => void, namespace?: string) => {
   const store = getSubject(namespace);
-  return store.subscribe((v) => {
+
+  let flag = false;
+
+
+  const unsub = store.subscribe((v) => {
     if (v !== undefined) {
       listener(v);
     }
   });
+
+
+  if (Array.isArray(storeWin[TY_STORE_CACHE_LIST_VAR])) {
+    flag = true;
+    storeWin[TY_STORE_CACHE_LIST_VAR]?.push(unsub);
+  }
+
+  return {
+    unsubscribe: () => {
+      if (flag) {
+        storeWin[TY_STORE_CACHE_LIST_VAR] = storeWin[TY_STORE_CACHE_LIST_VAR]?.filter((z) => z !== unsub);
+      }
+      unsub.unsubscribe();
+    },
+  };
 };
 
 export const dispatch = (state: {[key:string]: any} = {}, merge = true, namespace?: string) => {
@@ -94,6 +126,22 @@ export const dispatch = (state: {[key:string]: any} = {}, merge = true, namespac
   }
   store.next(v);
 };
+
+export const clearSubject = (namespace?: string) => {
+  const store = getSubject(namespace);
+  if (store) {
+    store.unsubscribe();
+    rmSubject(namespace);
+  }
+};
+
+export const clearListeners = (namespace?: string) => {
+  const store = getSubject(namespace);
+  if (store) {
+    store.observers = [];
+  }
+};
+
 
 export const getState = (namespace?: string) => {
   const store = getSubject(namespace);

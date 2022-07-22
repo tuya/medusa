@@ -4,7 +4,10 @@ import Log from '../../utils/log';
 
 const _NEXT_DATA_HACK_STRING = 'JSON.parse(document.getElementById(\'__NEXT_DATA__\').textContent)';
 
-export const execNextScripts = async (sandbox: Sandbox, scripts: AssetItem[], json?: Record<string, any>) =>{
+export const execNextScripts = async (options: {
+  sandbox: Sandbox, scripts: AssetItem[], scriptJson?: Record<string, any>
+}) =>{
+  const {sandbox, scripts, scriptJson: json} = options;
   const list: string[] = [];
 
   for (const key in json || {}) {
@@ -32,17 +35,5 @@ export const execNextScripts = async (sandbox: Sandbox, scripts: AssetItem[], js
     inScripts: scripts,
     outScripts: list
   });
-
-  try {
-    const sandBoxWin = sandbox.getSandbox();
-    let execScript = `with (window) {;${list.join(';\n')}\n}`;
-    const blob = new Blob([execScript], {type: 'application/javascript'});
-    const url = URL.createObjectURL(blob);
-    execScript = `${execScript}\n//# sourceURL=${url}\n`;
-    const code = new Function('window', execScript).bind(sandBoxWin);
-    code(sandBoxWin);
-  } catch (error) {
-    console.error(`error occurs when execute script in sandbox: ${error}`);
-    throw error;
-  }
+  sandbox.execScriptInSandbox(list.join(';\n'));
 };

@@ -12,6 +12,7 @@ export type IContextType = {
   onAppLeave?: (id:string) => void
   onAppLoading: (b: boolean) => void
   onAppError: (str?: string) => void
+  fetch?: typeof fetch
 }
 
 export const RouteContext = React.createContext<IContextType|null>(null);

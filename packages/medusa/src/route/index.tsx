@@ -19,10 +19,13 @@ export type IRouteProps = {
    * zoe：京东微前端框架
    *
    * next：'next框架'
-
+   *
    */
   framework?: 'icestark' | 'qiankun' | 'zoe' | 'next' | 'ty-next'
 
+  /**
+   * 飞冰的加载方式，推荐只开发的时候用，因为线上静态文件的文件名一般会变，【推荐两颗星】
+   */
   assets?: {
     js?: Array<string>
     css?: Array<string>
@@ -74,9 +77,41 @@ export type IRouteProps = {
   tyNextVersion?: 1 | 3
 
   /**
-   * 是否将style插入到容器里
+   * 是否将style插入到容器里，默认为id选择器（qiankun框架下默认为property）, 设置property为属性选择器
    */
-  scopeCss?: boolean
+  scopeCss?: boolean | 'property' | 'id'
+
+  onUrlFix?: (url: string) => string | undefined
+
+  /**
+   * 用于prefetch的时候，指定的预加载路径
+   */
+  prefetchUrl?: string
+
+  /**
+   * 初始加载的时候，传递给子应用的数据，目前只有qiankun有效
+   */
+  props?: Record<string, any>
+
+  /**
+   * 指定部分特殊的动态加载的微应用资源（css/js) 不被 qiankun 劫持处理, 目前只对qiankun生效，后续看效果加上
+   */
+  excludeAssetFilter?: (assetUrl: string) => boolean
+
+  /**
+   * 初始注入一些全局变量至沙箱
+   */
+  injectGlobals?: Record<string, any>
+
+  /**
+   * 初始挂载到容器节点的html片段，由子应用自己代码里清除或保留
+   */
+  initHtmlStr?: string
+
+  /**
+   * 获取的子应用html，可进行替换
+   */
+  getTemplate?: (tpl: string) => string
 }
 
 const Route:React.FC<IRouteProps> = (props) => {

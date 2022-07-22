@@ -62,7 +62,7 @@ export default class WebpackPlugin implements IBasePlugin {
     /**
      * 默认的webpack变量
      */
-    if (p === 'webpackJsonp' || p === 'webpackChunkwebpack' || p === 'webpackHotUpdate') {
+    if (p === 'webpackJsonp' || p === 'webpackChunkwebpack' || p === 'webpackHotUpdate' || p === 'webpackChunk_N_E' || p === 'webpackHotUpdate_N_E') {
       return {
         value: Reflect.get(target, p)
       };

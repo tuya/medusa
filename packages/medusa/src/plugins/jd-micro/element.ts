@@ -134,39 +134,37 @@ export default class WrapperAppElement {
 
 const GlobalCache: Record<string, any> = {};
 
-const generateFunction = new Function('window', 'WrapperAppElement', `
-  with(window) {
-    class JDAppElement extends HTMLElement {
-      name = ''
-      url = ''
-      isWating = false
-
-      constructor() {
-        super()
-        this.wrapper = new WrapperAppElement(this)
-      }
-    
-      static get observedAttributes() {
-        return ['name', 'url'];
-      }
-    
-      connectedCallback() {
-        this.wrapper.connectedCallback();
-      }
-    
-      disconnectedCallback() {
-        this.wrapper.disconnectedCallback()
-      }
-      attributeChangedCallback(attr, _oldVal, newVal) {
-        this.wrapper.attributeChangedCallback(attr, _oldVal, newVal);
-      }
-    }
-    window.JDAppElement = JDAppElement
-  }
-`);
-
 
 export function defineElement(tagName: string): boolean {
+  const generateFunction = new Function('window', 'WrapperAppElement', `
+    with(window) {
+      class JDAppElement extends HTMLElement {
+        constructor() {
+          super()
+          this.name = ''
+          this.url = ''
+          this.isWating = false
+          this.wrapper = new WrapperAppElement(this)
+        }
+      
+        static get observedAttributes() {
+          return ['name', 'url'];
+        }
+      
+        connectedCallback() {
+          this.wrapper.connectedCallback();
+        }
+      
+        disconnectedCallback() {
+          this.wrapper.disconnectedCallback()
+        }
+        attributeChangedCallback(attr, _oldVal, newVal) {
+          this.wrapper.attributeChangedCallback(attr, _oldVal, newVal);
+        }
+      }
+      window.JDAppElement = JDAppElement
+    }
+  `);
   if (window.customElements.get(tagName)) {
     return false;
   }

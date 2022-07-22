@@ -1,10 +1,11 @@
-// import importHtml from '../import-html-entry';
+// import importHtmlEntry from '../import-html-entry';
 import Layer from './path';
 import {execNextScripts} from '../plugins/next/assets';
 import {importHtml} from '../html-parse';
 import {execCommonScript} from '../plugins/common/assets';
-import {getStyleContents} from '../html-parse/utils';
+import {FetchFn, getStyleContents} from '../html-parse/utils';
 import Sandbox from '../sandbox';
+import {parseUrl} from './url';
 
 const parseManifest = async (manifest: string, jsList: string[], cssList: string[]) => {
   const res = await fetch(manifest);
@@ -44,6 +45,9 @@ export const parseAssets = async (options:{
   next?: string
   credentials?: boolean
   query?:string
+  onUrlFix?: (url: string) => string | undefined
+  fetch?: typeof fetch
+  getTemplate?: (tpl: string) => string
 }, layer?: Layer) => {
   const jsList:Array<string> = [];
   const cssList:Array<string> = [];
@@ -75,7 +79,8 @@ export const parseAssets = async (options:{
 
   const fetchOption = options.credentials ? {
     fetch: (src: string) => {
-      if (src.endsWith('.css') || src.endsWith('.js')) {
+      const pathname = parseUrl(src).pathname || '';
+      if (pathname.endsWith('.css') || pathname.endsWith('.js')) {
         return fetch(src);
       }
       return fetch(src, {
@@ -84,6 +89,10 @@ export const parseAssets = async (options:{
     }
   }: {};
 
+  if (options.fetch) {
+    fetchOption.fetch = options.fetch;
+  }
+
   const {
     scriptJson,
     scripts,
@@ -91,12 +100,20 @@ export const parseAssets = async (options:{
     assetPublicPath,
     template,
     entry
-  } = await importHtml(url, fetchOption.fetch as any);
+  } = await importHtml({
+    url,
+    fetchFn: fetchOption.fetch as FetchFn,
+    onUrlFix: options.onUrlFix,
+    getTemplate: options.getTemplate
+  });
 
   if (options.next) {
     return {
       execScripts: async (sandbox: Sandbox) => {
-        return await execNextScripts(sandbox, scripts, scriptJson);
+        return await execNextScripts({
+          sandbox, scripts,
+          scriptJson
+        });
       },
       template,
       assetPublicPath,
@@ -107,7 +124,12 @@ export const parseAssets = async (options:{
   if (options.html) {
     return {
       execScripts: async (sandbox: Sandbox) => {
-        await execCommonScript(sandbox, scripts, entry);
+        await execCommonScript({
+          sandbox,
+          scripts,
+          entry,
+          scriptJson
+        });
       },
       template,
       assetPublicPath,
@@ -119,14 +141,5 @@ export const parseAssets = async (options:{
   //   const {execScripts, getExternalStyleSheets, assetPublicPath, template} = await importHtml(url, fetchOption);
   //   return {execScripts, getExternalStyleSheets, assetPublicPath, template};
   // }
-  // if (options.next) {
-  //   const {getExternalStyleSheets, getExternalScriptJsons, getExternalScripts, assetPublicPath} = await importHtml(url, fetchOption);
-  //   return {getExternalStyleSheets, assetPublicPath, execNextInSandbox: async (sandbox:any)=>{
-  //     const list = await getExternalScripts();
-  //     const json = getExternalScriptJsons?.() || {};
-  //     execNextScripts(sandbox, list, json);
-  //   }};
-  // }
-
   return {jsList, cssList};
 };

@@ -5,7 +5,14 @@ import BrowerParser from './browser';
 const cachedHtmlMap: Record<string, string> = {};
 
 
-export const importHtml = async (url: string, fetchFn?: FetchFn) => {
+export const importHtml = async (options: {
+  url: string,
+  fetchFn?: FetchFn,
+  onUrlFix?: (url: string) => string | undefined
+  getTemplate?: (url: string) => string
+}) => {
+  let {url, fetchFn, onUrlFix, getTemplate} = options;
+
   if (!fetchFn && typeof fetch !== 'undefined') {
     fetchFn = fetch;
   }
@@ -19,6 +26,10 @@ export const importHtml = async (url: string, fetchFn?: FetchFn) => {
   if (!htmlStr) {
     const resp = await fetchFn(url);
     htmlStr = cachedHtmlMap[url] = await resp.text();
+
+    if (getTemplate) {
+      htmlStr = getTemplate(htmlStr);
+    }
   }
 
   const assetPublicPath = getPublicPath(url);
@@ -28,7 +39,7 @@ export const importHtml = async (url: string, fetchFn?: FetchFn) => {
   //   return parser.extract(fetchFn);
   // } else {
   const parser = new BrowerParser(htmlStr, assetPublicPath);
-  return parser.extract(fetchFn);
+  return parser.extract(fetchFn, onUrlFix);
   // }
 };
 
