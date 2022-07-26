@@ -74,7 +74,12 @@ export default class IceStarkPlugin implements IBasePlugin {
     if (p === 'document') {
       const value = Reflect.get(originWindow, p);
       return {
-        value: proxyDocument(value, sandbox, this._excludeAssetFilter)
+        value: proxyDocument({
+          doc: value,
+          excludeAssetFilter: this._excludeAssetFilter,
+          assetPublicPath: this.assetPublicPath,
+          sandbox: sandbox,
+        })
       };
     }
   }

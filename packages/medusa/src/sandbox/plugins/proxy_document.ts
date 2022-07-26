@@ -72,22 +72,29 @@ export const headProxy = (
 };
 
 export const proxyDocument = (
-    doc: HTMLDocument,
-    sandbox?: Window,
-    excludeAssetFilter?: (assetUrl: string) => boolean
+    // doc: HTMLDocument,
+    // sandbox?: Window,
+    // excludeAssetFilter?: (assetUrl: string) => boolean
+    op: {
+      doc: Document,
+      sandbox: Window,
+      excludeAssetFilter?: (assetUrl: string) => boolean
+      assetPublicPath?: string
+    }
 ) => {
-  return new Proxy(doc, {
+  return new Proxy(op.doc, {
     get(target, p) {
       const value = target[p];
       if (['body', 'head'].includes(p as string)) {
         return headProxy({
           head: value,
-          sandbox,
-          excludeAssetFilter
+          sandbox: op.sandbox,
+          excludeAssetFilter: op.excludeAssetFilter,
+          assetPublicPath: op.assetPublicPath
         });
       }
       if (isWindowFunction(value)) {
-        return value.bind(doc);
+        return value.bind(op.doc);
       }
       return value;
     },

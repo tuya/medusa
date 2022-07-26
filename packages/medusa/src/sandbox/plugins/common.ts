@@ -3,12 +3,16 @@ import {proxyDocument} from './proxy_document';
 
 export default class DocumentPlugin implements IBasePlugin {
   private _excludeAssetFilter?: (assetUrl: string) => boolean
+  public assetPublicPath?: string
 
   constructor(options: {
     props?: Record<string, any>
     excludeAssetFilter?: (assetUrl: string) => boolean
+    assetPublicPath?: string,
+
   }) {
-    const {excludeAssetFilter} = options;
+    const {excludeAssetFilter, assetPublicPath} = options;
+    this.assetPublicPath = assetPublicPath;
     this._excludeAssetFilter = excludeAssetFilter;
   }
 
@@ -18,7 +22,12 @@ export default class DocumentPlugin implements IBasePlugin {
     if (p === 'document') {
       const value = Reflect.get(originWindow, p);
       return {
-        value: proxyDocument(value, sandbox, this._excludeAssetFilter)
+        value: proxyDocument({
+          doc: value,
+          excludeAssetFilter: this._excludeAssetFilter,
+          assetPublicPath: this.assetPublicPath,
+          sandbox: sandbox,
+        })
       };
     }
   }

@@ -134,6 +134,7 @@ export default class Sandbox {
     } else {
       this._pluginSystem.plugins.push(new CommonPlugin({
         excludeAssetFilter: options?.excludeAssetFilter,
+        assetPublicPath: this._assetPublicPath,
       }));
     }
   }
